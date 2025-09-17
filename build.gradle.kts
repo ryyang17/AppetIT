@@ -20,9 +20,18 @@ repositories {
 }
 
 dependencies {
+    // --- Core Spring Boot + Kotlin ---
 	implementation("org.springframework.boot:spring-boot-starter")
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
+
+    // --- Swagger ---
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.13")
+
+    // --- Reactive Database (if you want R2DBC) ---
+    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+    runtimeOnly("org.postgresql:r2dbc-postgresql")
+
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
