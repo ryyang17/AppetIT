@@ -4,6 +4,7 @@ import nl.appetit.api.model.Category
 import nl.appetit.api.repository.CategoryRepository
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 
 @Service
 class CategoryService(
@@ -12,5 +13,6 @@ class CategoryService(
     fun getAllCategories(): Flux<Category> = 
         db.findAll()
 
-    
+	fun instertCategory(category: Category): Mono<Category> =
+		db.save(category)
 }
