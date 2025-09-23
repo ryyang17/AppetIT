@@ -1,11 +1,11 @@
-package com.example.demo
+package nl.appetit.api
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class DemoApplication
+class AppetITApi
 
 fun main(args: Array<String>) {
-    runApplication<DemoApplication>(*args)
+    val context = runApplication<AppetITApi>(*args)
 }
