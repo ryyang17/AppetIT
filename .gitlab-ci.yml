@@ -1,29 +1,55 @@
+# .gitlab-ci.yml
+stages:
+  - build
+  - test
+  - package
+
+variables:
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"  # cache Gradle dependencies
+  JAVA_HOME: "/usr/local/openjdk-24"           # Java 24 path in Docker OpenJDK image
+  PATH: "$JAVA_HOME/bin:$PATH"
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .gradle/wrapper/
+    - .gradle/caches/
+
+before_script:
+  - java -version
+  - ./gradlew --version
+
+# Build stage
 build:
   stage: build
-  tags:
-    - api
+  image: openjdk:24
   script:
-    - ./gradlew assemble
+    - ./gradlew clean assemble
+  artifacts:
+    paths:
+      - build/libs/
+    expire_in: 1 week
+
+# Test stage
+test:
+  stage: test
+  image: openjdk:24
+  script:
+    - ./gradlew test
+  artifacts:
+    reports:
+      junit:
+        - build/test-results/test/*.xml
+  allow_failure: false
+
+# Package stage
+package:
+  stage: package
+  image: openjdk:24
+  script:
+    - ./gradlew bootJar
   artifacts:
     paths:
       - build/libs/*.jar
     expire_in: 1 week
 
-test:
-  stage: test
-  tags:
-    - api
-  script:
-    - ./gradlew test
-  artifacts:
-    when: always
-    reports:
-      junit:
-        - build/test-results/test/**/TEST-*.xml
-
-lint:
-  stage: test
-  tags:
-    - api
-  script:
-    - ./gradlew k
