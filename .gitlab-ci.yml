@@ -11,6 +11,10 @@ variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
   # Use shorter path to avoid Windows path length issues
   GRADLE_USER_HOME: "C:\\gc"
+  # Prevent checkout clean from failing on Windows long paths
+  GIT_STRATEGY: "fetch"
+  GIT_CLEAN_FLAGS: "none"
+  GIT_DEPTH: "1"
 
 before_script:
   - git config core.longpaths true
