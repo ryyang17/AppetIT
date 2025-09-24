@@ -24,7 +24,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
-
+	// --- Hot-reload ---
+	developmentOnly("org.springframework.boot:spring-boot-devtools")
     // --- Swagger ---
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.13")
 
