@@ -1,10 +1,11 @@
-image: openjdk:21-jdk
+image: eclipse-temurin:21-jdk
 
 variables:
   POSTGRES_DB: appetit
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: password
   POSTGRES_HOST_AUTH_METHOD: trust
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
 services:
   - postgres:17
@@ -19,6 +20,7 @@ cache:
     - .gradle/caches
 
 before_script:
+  - apt-get update -qq && apt-get install -y -qq git
   - chmod +x gradlew
   - export GRADLE_USER_HOME=`pwd`/.gradle
 
