@@ -8,13 +8,9 @@ stages:
   - test
 
 variables:
-  GRADLE_USER_HOME: "$CI_PROJECT_DIR\\.gradle"
-
-cache:
-  key: ${CI_COMMIT_REF_SLUG}
-  paths:
-    - .gradle/wrapper/
-    - .gradle/caches/
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  # Use shorter path to avoid Windows path length issues
+  GRADLE_USER_HOME: "C:\\gc"
 
 before_script:
   - java -version
@@ -23,7 +19,7 @@ before_script:
 build:
   stage: build
   script:
-    - .\gradlew.bat clean assemble
+    - .\gradlew.bat clean assemble --no-daemon
   artifacts:
     paths:
       - build/libs/
@@ -32,10 +28,13 @@ build:
 test:
   stage: test
   script:
-    - .\gradlew.bat test
+    - .\gradlew.bat test --no-daemon
   artifacts:
     when: always
     reports:
       junit:
-        - build/test-results/test/*.xml
+        - build/test-results/test/TEST-*.xml
+    paths:
+      - build/test-results/
+      - build/reports/
 
