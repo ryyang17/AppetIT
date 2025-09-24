@@ -13,6 +13,8 @@ variables:
   GRADLE_USER_HOME: "C:\\gc"
 
 before_script:
+  - git config core.longpaths true
+  - git clean -fdx
   - java -version
   - .\gradlew.bat --version
 
