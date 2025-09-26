@@ -15,6 +15,12 @@ class ProductService(
 
 	fun insertProduct(product: Product): Mono<Product> =
 		db.save(product)
+
+    fun deleteProductById(id: Int): Mono<Void> =
+        db.deleteById(id)
+
+    fun deleteAllProducts(): Mono<Void> =
+        db.deleteAll()
 }
 
 

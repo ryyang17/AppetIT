@@ -40,6 +40,14 @@ class ProductController(
 			service.insertProduct(product.toEntity())
 		}
 	}
+
+    @DeleteMapping("/{id}")
+    fun delete(@PathVariable id: Int): Mono<Void> =
+        service.deleteProductById(id)
+
+    @DeleteMapping
+    fun deleteAll(): Mono<Void> =
+        service.deleteAllProducts()
 }
 
 

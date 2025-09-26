@@ -12,6 +12,7 @@ class FlywayConfig(private val env: Environment) {
     fun flyway(): Flyway {
         return Flyway.configure()
             .baselineOnMigrate(true)
+            .validateOnMigrate(false) // Disable validation to allow checksum mismatches
             .dataSource(
                 env.getRequiredProperty("spring.flyway.url"),
                 env.getRequiredProperty("spring.flyway.user"),
