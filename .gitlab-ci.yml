@@ -1,10 +1,13 @@
 # .gitlab-ci.yml
+image: openjdk:24-jdk-slim
+
 stages:
   - build
   - test
   - package
 
 before_script:
+  - apt-get update && apt-get install -y findutils
   - java -version
   - ./gradlew --version
   - ./gradlew clean
