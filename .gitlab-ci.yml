@@ -5,6 +5,7 @@ stages:
   - package
 
 before_script:
+  - apt-get update && apt-get install -y findutils
   - java -version
   - ./gradlew --version
 
@@ -12,7 +13,7 @@ before_script:
 build:
   stage: build
   script:
-    - ./gradlew clean assemble --no-deamon
+    - ./gradlew clean assemble --no-daemon
   artifacts:
     paths:
       - build/libs/
@@ -22,7 +23,7 @@ build:
 test:
   stage: test
   script:
-    - ./gradlew test --no-deamon
+    - ./gradlew test --no-daemon
   artifacts:
     reports:
       junit:
@@ -33,7 +34,7 @@ test:
 package:
   stage: package
   script:
-    - ./gradlew bootJar --no-deamon
+    - ./gradlew bootJar --no-daemon
   artifacts:
     paths:
       - build/libs/*.jar
