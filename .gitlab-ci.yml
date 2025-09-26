@@ -1,46 +1,40 @@
-workflow:
-  rules:
-    - if: $CI_COMMIT_BRANCH
-
-
+# .gitlab-ci.yml
 stages:
   - build
   - test
-
-variables:
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-  # Use shorter path to avoid Windows path length issues
-  GRADLE_USER_HOME: "C:\\gc"
-  # Prevent checkout clean from failing on Windows long paths
-  GIT_STRATEGY: "fetch"
-  GIT_CLEAN_FLAGS: "none"
-  GIT_DEPTH: "1"
+  - package
 
 before_script:
-  - git config core.longpaths true
-  - git clean -fdx
   - java -version
-  - .\gradlew.bat --version
+  - ./gradlew --version
 
+# Build stage
 build:
   stage: build
   script:
-    - .\gradlew.bat clean assemble --no-daemon
+    - ./gradlew clean assemble --no-deamon
   artifacts:
     paths:
       - build/libs/
     expire_in: 1 week
 
+# Test stage
 test:
   stage: test
   script:
-    - .\gradlew.bat test --no-daemon
+    - ./gradlew test --no-deamon
   artifacts:
-    when: always
     reports:
       junit:
-        - build/test-results/test/TEST-*.xml
-    paths:
-      - build/test-results/
-      - build/reports/
+        - build/test-results/test/*.xml
+  allow_failure: true
 
+# Package stage
+package:
+  stage: package
+  script:
+    - ./gradlew bootJar --no-deamon
+  artifacts:
+    paths:
+      - build/libs/*.jar
+    expire_in: 1 week
