@@ -8,6 +8,7 @@ before_script:
   - apt-get update && apt-get install -y findutils
   - java -version
   - ./gradlew --version
+  - ./gradlew clean
 
 # Build stage
 build:
