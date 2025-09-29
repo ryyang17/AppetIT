@@ -1,0 +1,44 @@
+# .gitlab-ci.yml
+image: openjdk:24-jdk-slim
+
+stages:
+  - build
+  - test
+  - package
+
+before_script:
+  - apt-get update && apt-get install -y findutils
+  - java -version
+  - ./gradlew --version
+  - ./gradlew clean
+
+# Build stage
+build:
+  stage: build
+  script:
+    - ./gradlew clean assemble --no-daemon
+  artifacts:
+    paths:
+      - build/libs/
+    expire_in: 1 week
+
+# Test stage
+test:
+  stage: test
+  script:
+    - ./gradlew test --no-daemon
+  artifacts:
+    reports:
+      junit:
+        - build/test-results/test/*.xml
+  allow_failure: true
+
+# Package stage
+package:
+  stage: package
+  script:
+    - ./gradlew bootJar --no-daemon
+  artifacts:
+    paths:
+      - build/libs/*.jar
+    expire_in: 1 week
