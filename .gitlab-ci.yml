@@ -36,11 +36,6 @@ test:
 # Package stage
 pacakge_prod:
   stage: package
-  services:
-    - docker:dind
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
   script:
     - export COMMIT_HASH="$CI_COMMIT_SHORT_SHA"
     - export DEPLOYMENT_TYPE="latest"
@@ -52,16 +47,14 @@ pacakge_prod:
 
 package_staging:
   stage: package
-  services:
-    - docker:dind
   variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: unix:///var/run/docker.sock
   script:
     - export COMMIT_HASH="$CI_COMMIT_SHORT_SHA"
     - export DEPLOYMENT_TYPE="staging"
     - export DOCKER_USERNAME="$DOCKER_USERNAME"
     - export DOCKER_PASSWORD="$DOCKER_PASSWORD"
+    - env
     - ./gradlew bootBuildImage --no-daemon
   only:
     - staging
