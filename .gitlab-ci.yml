@@ -51,7 +51,6 @@ package_staging:
     - name: docker:dind
       command: ["--tls=false"]
   script:
-    - docker info
     - export COMMIT_HASH="$CI_COMMIT_SHORT_SHA"
     - export DEPLOYMENT_TYPE="staging"
     - export DOCKER_USERNAME="$DOCKER_USERNAME"
