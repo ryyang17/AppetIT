@@ -36,6 +36,11 @@ test:
 # Package stage
 pacakge_prod:
   stage: package
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   script:
     - export COMMIT_HASH="$CI_COMMIT_SHORT_SHA"
     - export DEPLOYMENT_TYPE="latest"
@@ -47,6 +52,11 @@ pacakge_prod:
 
 package_staging:
   stage: package
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   script:
     - export COMMIT_HASH="$CI_COMMIT_SHORT_SHA"
     - export DEPLOYMENT_TYPE="staging"
