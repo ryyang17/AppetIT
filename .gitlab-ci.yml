@@ -47,15 +47,11 @@ pacakge_prod:
 
 package_staging:
   stage: package
-  services:
-    - name: docker:dind
-      command: ["--tls=false"]
   script:
     - export COMMIT_HASH="$CI_COMMIT_SHORT_SHA"
     - export DEPLOYMENT_TYPE="staging"
     - export DOCKER_USERNAME="$DOCKER_USERNAME"
     - export DOCKER_PASSWORD="$DOCKER_PASSWORD"
-    - env
     - ./gradlew bootBuildImage --no-daemon
   only:
     - staging
