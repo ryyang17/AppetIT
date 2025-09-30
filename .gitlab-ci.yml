@@ -34,11 +34,24 @@ test:
   allow_failure: true
 
 # Package stage
-package:
+pacakge_prod:
   stage: package
   script:
-    - ./gradlew bootJar --no-daemon
-  artifacts:
-    paths:
-      - build/libs/*.jar
-    expire_in: 1 week
+    - export COMMIT_HASH="$CI_COMMIT_SHORT_SHA"
+    - export DEPLOYMENT_TYPE="latest"
+    - export DOCKER_USERNAME="$DOCKER_USERNAME"
+    - export DOCKER_PASSWORD="$DOCKER_PASSWORD"
+    - ./gradlew bootBuildImage --no-daemon
+  only:
+    - main
+
+package_staging:
+  stage: package
+  script:
+    - export COMMIT_HASH="$CI_COMMIT_SHORT_SHA"
+    - export DEPLOYMENT_TYPE="staging"
+    - export DOCKER_USERNAME="$DOCKER_USERNAME"
+    - export DOCKER_PASSWORD="$DOCKER_PASSWORD"
+    - ./gradlew bootBuildImage --no-daemon
+  only:
+    - staging

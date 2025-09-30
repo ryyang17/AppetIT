@@ -1,3 +1,5 @@
+import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
+
 plugins {
 	kotlin("jvm") version "2.2.0"
 	kotlin("plugin.spring") version "2.2.0"
@@ -47,6 +49,21 @@ kotlin {
 	compilerOptions {
 		freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
 	}
+}
+
+val commitHash = System.getenv("COMMIT_HASH") ?: "latest"
+val deploymentType = System.getenv("DEPLOYMENT_TYPE") ?: "staging"
+
+tasks.named<BootBuildImage>("bootBuildImage") {
+	imageName.set("547988/appetit-api:${commitHash}")
+	publish.set(true)
+	docker {
+		publishRegistry {
+			username.set(System.getenv("DOCKER_USERNAME"))
+			password.set(System.getenv("DOCKER_PASSWORD"))
+		}
+	}
+	tags.set(setOf("547988/appetit-api:${deploymentType}"))
 }
 
 tasks.withType<Test> {
