@@ -27,9 +27,21 @@ class CategoryController(
     fun list(): Flux<Category> = service.getAllCategories()
 
 	@PostMapping
-	fun insert(@RequestBody request: Mono<CategoryRequest>): Mono<Category> {
-		return request.flatMap { category ->
-			service.instertCategory(category.toEntity())
-		}
-	} 
+    fun insert(@RequestBody request: Mono<CategoryRequest>): Mono<Category> {
+        return request.flatMap { category ->
+            service.insertCategory(category.toEntity())
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    fun delete(@PathVariable id: Long): Mono<Void> =
+        service.deleteCategoryById(id)
+
+    @PutMapping("/{id}")
+    fun update(@PathVariable id: Long, @RequestBody request: Mono<CategoryRequest>): Mono<Category> =
+        request.flatMap { category ->
+            service.updateCategory(id, category.toEntity())
+        }
+
+
 }

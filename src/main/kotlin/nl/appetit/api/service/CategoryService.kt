@@ -13,6 +13,23 @@ class CategoryService(
     fun getAllCategories(): Flux<Category> = 
         db.findAll()
 
-	fun instertCategory(category: Category): Mono<Category> =
-		db.save(category)
+    fun insertCategory(category: Category): Mono<Category> =
+        db.save(category)
+
+    fun deleteCategoryById(id: Long): Mono<Void> =
+        db.deleteById(id)
+
+    fun updateCategory(id: Long, newCategory: Category): Mono<Category> =
+        db.findById(id)
+            .switchIfEmpty(Mono.error(RuntimeException("Category not found with id: $id")))
+            .flatMap { existing ->
+                val updated = existing.copy(
+                    name = newCategory.name
+                )
+                db.save(updated)
+            }
+
+
+
+
 }

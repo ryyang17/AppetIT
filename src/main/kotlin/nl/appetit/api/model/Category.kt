@@ -10,7 +10,7 @@ import java.time.Instant
 data class Category(
 	@Id 
 	@Column("category_id")
-	val id: Int? = null,
+	val id: Long? = null,
     
 	@Column("name")
 	val name: String,
