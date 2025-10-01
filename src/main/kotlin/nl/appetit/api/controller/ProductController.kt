@@ -41,6 +41,12 @@ class ProductController(
 		}
 	}
 
+	@PutMapping("/{id}")
+	fun update(@PathVariable id: Int, @RequestBody request: Mono<ProductRequest>): Mono<Product> =
+		request.flatMap { product ->
+			service.updateProduct(id, product.toEntity())
+		}
+
     @DeleteMapping("/{id}")
     fun delete(@PathVariable id: Int): Mono<Void> =
         service.deleteProductById(id)
