@@ -40,7 +40,7 @@ export function BottomNavigation({
 }: BottomNavigationProps) {
   return (
     <div className={cn(
-      "fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm bg-white border-t border-gray-200",
+      "w-full bg-white border-t border-gray-200",
       className
     )}>
       <div className="flex justify-around py-2">
