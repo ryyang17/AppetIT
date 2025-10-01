@@ -19,6 +19,17 @@ class CategoryService(
     fun deleteCategoryById(id: Long): Mono<Void> =
         db.deleteById(id)
 
+    fun updateCategory(id: Long, newCategory: Category): Mono<Category> =
+        db.findById(id)
+            .switchIfEmpty(Mono.error(RuntimeException("Category not found with id: $id")))
+            .flatMap { existing ->
+                val updated = existing.copy(
+                    name = newCategory.name
+                )
+                db.save(updated)
+            }
+
+
 
 
 }

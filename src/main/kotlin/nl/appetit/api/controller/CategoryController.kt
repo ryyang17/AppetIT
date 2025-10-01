@@ -36,4 +36,12 @@ class CategoryController(
     @DeleteMapping("/{id}")
     fun delete(@PathVariable id: Long): Mono<Void> =
         service.deleteCategoryById(id)
+
+    @PutMapping("/{id}")
+    fun update(@PathVariable id: Long, @RequestBody request: Mono<CategoryRequest>): Mono<Category> =
+        request.flatMap { category ->
+            service.updateCategory(id, category.toEntity())
+        }
+
+
 }
