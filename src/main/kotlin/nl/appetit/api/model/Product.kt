@@ -29,6 +29,7 @@ data class Product(
 	@JsonProperty("available")
 	val isAvailable: Boolean,
 
+	// Foreign key linking this product to a category (one category -> many products)
 	@Column("category_id")
 	val categoryId: Int? = null,
 

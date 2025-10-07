@@ -34,6 +34,12 @@ class ProductController(
     @GetMapping
     fun list(): Flux<Product> = service.getAllProducts()
 
+	// Get all products for a specific category
+	// Example: GET /products/category/1
+	@GetMapping("/category/{categoryId}")
+	fun listByCategory(@PathVariable categoryId: Int): Flux<Product> =
+		service.getProductsByCategory(categoryId)
+
 	@PostMapping
 	fun insert(@RequestBody request: Mono<ProductRequest>): Mono<Product> {
 		return request.flatMap { product ->

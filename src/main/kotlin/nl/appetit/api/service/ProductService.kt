@@ -32,10 +32,14 @@ class ProductService(
 					description = newProduct.description,
 					imageUrl = newProduct.imageUrl,
 					isAvailable = newProduct.isAvailable,
-					categoryId = newProduct.categoryId
+					categoryId = newProduct.categoryId  // Link product to a category
 				)
 				db.save(updated)
 			}
+
+	// Get all products that belong to a specific category
+	fun getProductsByCategory(categoryId: Int): Flux<Product> =
+		db.findByCategoryId(categoryId)
 }
 
 
