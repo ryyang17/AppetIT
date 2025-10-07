@@ -34,12 +34,24 @@ class ProductController(
     @GetMapping
     fun list(): Flux<Product> = service.getAllProducts()
 
+	// Get all products for a specific category
+	// Example: GET /products/category/1
+	@GetMapping("/category/{categoryId}")
+	fun listByCategory(@PathVariable categoryId: Int): Flux<Product> =
+		service.getProductsByCategory(categoryId)
+
 	@PostMapping
 	fun insert(@RequestBody request: Mono<ProductRequest>): Mono<Product> {
 		return request.flatMap { product ->
 			service.insertProduct(product.toEntity())
 		}
 	}
+
+	@PutMapping("/{id}")
+	fun update(@PathVariable id: Int, @RequestBody request: Mono<ProductRequest>): Mono<Product> =
+		request.flatMap { product ->
+			service.updateProduct(id, product.toEntity())
+		}
 
     @DeleteMapping("/{id}")
     fun delete(@PathVariable id: Int): Mono<Void> =
