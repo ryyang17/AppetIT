@@ -1,4 +1,5 @@
 import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
+import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
 	kotlin("jvm") version "2.2.0"
@@ -64,6 +65,10 @@ tasks.named<BootBuildImage>("bootBuildImage") {
 		}
 	}
 	tags.set(setOf("547988/appetit-api:${deploymentType}"))
+}
+
+tasks.named<BootJar>("bootJar") {
+    archiveFileName.set("app.jar")
 }
 
 tasks.withType<Test> {
