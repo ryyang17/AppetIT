@@ -1,5 +1,6 @@
 package nl.appetit.api.controller
 
+import nl.appetit.api.dto.CategoryDTO
 import nl.appetit.api.model.Category
 import nl.appetit.api.repository.CategoryRepository
 import nl.appetit.api.service.CategoryService
@@ -25,8 +26,36 @@ class CategoryController(
     private val service: CategoryService
 ) {
 
+    /**
+     * GET /categories - Retourneert alle categorieën (flat list)
+     * Gebruik dit voor backwards compatibility of eenvoudige lijsten
+     */
     @GetMapping
     fun list(): Flux<Category> = service.getAllCategories()
+
+    /**
+     * GET /categories/tree - Retourneert hierarchische boom-structuur
+     * Root categorieën bevatten hun children recursief
+     * 
+     * Response format:
+     * [
+     *   {
+     *     "id": 1,
+     *     "name": "Food",
+     *     "parentId": null,
+     *     "children": [
+     *       {
+     *         "id": 2,
+     *         "name": "Pizza",
+     *         "parentId": 1,
+     *         "children": [...]
+     *       }
+     *     ]
+     *   }
+     * ]
+     */
+    @GetMapping("/tree")
+    fun getTree(): Mono<List<CategoryDTO>> = service.getCategoriesHierarchical()
 
 	@PostMapping
     fun insert(@RequestBody request: Mono<CategoryRequest>): Mono<Category> {
@@ -48,7 +77,4 @@ class CategoryController(
     @GetMapping("/subcategory/{parentId}")
     fun getSubcategories(@PathVariable parentId: Long): Flux<Category> =
         service.getSubcategoriesByParentId(parentId)
-
-
-
 }
