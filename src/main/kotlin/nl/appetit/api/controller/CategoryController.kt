@@ -10,11 +10,13 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 data class CategoryRequest(
-	val name: String
+	val name: String,
+    val parentId: Long? = null
 )
 
 fun CategoryRequest.toEntity() = Category(
-	name = this.name
+	name = this.name,
+    parentId = this.parentId
 )
 
 @RestController
@@ -47,6 +49,11 @@ class CategoryController(
     fun updateOrder(@RequestBody ids: List<Long>): Mono<Void> {
         return service.updateCategoryOrder(ids)
     }
+
+    @GetMapping("/subcategory/{parentId}")
+    fun getSubcategories(@PathVariable parentId: Long): Flux<Category> =
+        service.getSubcategoriesByParentId(parentId)
+
 
 
 }
