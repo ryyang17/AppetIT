@@ -1,12 +1,33 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { BottomNavigation } from "@/components/ui/bottom-navigation";
+import { ProductDetailModal } from "@/components/ui/product-detail-modal";
 import { useProducts } from "@/hooks/useProducts";
 import { Search, Mic, Loader2 } from "lucide-react";
+import { Product } from "@/lib/api";
 
 export default function Home() {
   const { products, loading, error } = useProducts();
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleProductClick = (product: Product) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleAddToCart = (product: Product, quantity: number) => {
+    // TODO: Implement cart functionality
+    console.log(`Added ${quantity}x ${product.name} to cart`);
+    alert(`Added ${quantity}x ${product.name} to cart!`);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-2">
@@ -40,18 +61,9 @@ export default function Home() {
                 
                 {/* Header */}
                 <div className="bg-white p-4 shadow-sm">
-                  <h1 className="text-xl font-semibold text-gray-800 mb-3">All view Food</h1>
+                  <h1 className="text-xl font-semibold text-gray-800 mb-3">Menu</h1>
                   
-                  {/* Search Bar */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <input
-                      type="text"
-                      placeholder="Search for food, restaurants..."
-                      className="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <Mic className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  </div>
+                  
                 </div>
 
                 {/* Scrollable Content */}
@@ -74,10 +86,14 @@ export default function Home() {
                   {/* Products */}
                   {!loading && !error && (
                     <div>
-                      <h2 className="text-lg font-semibold text-gray-800 mb-3">Menu Items</h2>
+                      
                       <div className="grid grid-cols-2 gap-3">
                         {products.map((product) => (
-                          <Card key={product.id} className="overflow-hidden">
+                          <Card 
+                            key={product.id} 
+                            className="overflow-hidden cursor-pointer transition-transform hover:scale-105"
+                            onClick={() => handleProductClick(product)}
+                          >
                             <CardContent className="p-0">
                               <div className="aspect-square bg-gray-100 relative flex items-center justify-center">
                                 <img 
@@ -121,6 +137,14 @@ export default function Home() {
                 <div className="absolute bottom-0 left-0 right-0">
                   <BottomNavigation />
                 </div>
+
+                {/* Product Detail Modal */}
+                <ProductDetailModal
+                  product={selectedProduct}
+                  isOpen={isModalOpen}
+                  onClose={handleCloseModal}
+                  onAddToCart={handleAddToCart}
+                />
 
               </div>
             </div>
