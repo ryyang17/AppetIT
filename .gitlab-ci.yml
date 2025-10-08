@@ -61,7 +61,7 @@ deploy_staging:
   only:
     - staging
 
-deploy_staging:
+deploy_prod:
   stage: deploy
   tags: [appetit_deploy]
   script:
