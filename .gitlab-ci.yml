@@ -5,6 +5,7 @@ stages:
   - build
   - test
   - package
+  - deploy
 
 # Build stage
 build:
@@ -49,3 +50,23 @@ package_staging:
     - docker push 547988/appetit-api:$CI_COMMIT_SHORT_SHA
   only:
     - staging
+
+deploy_staging:
+  stage: deploy
+  tags: [appetit_deploy]
+  script:
+    - cd /srv/appetit
+    - docker compose pull staging
+    - docker compose up -d staging
+  only:
+    - staging
+
+deploy_staging:
+  stage: deploy
+  tags: [appetit_deploy]
+  script:
+    - cd /srv/appetit
+    - docker compose pull prod
+    - docker compose up -d prod
+  only:
+    - main
