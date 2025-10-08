@@ -45,6 +45,11 @@ class CategoryController(
             service.updateCategory(id, category.toEntity())
         }
 
+    @PutMapping("/CategoryOrder")
+    fun updateOrder(@RequestBody ids: List<Long>): Mono<Void> {
+        return service.updateCategoryOrder(ids)
+    }
+
     @GetMapping("/subcategory/{parentId}")
     fun getSubcategories(@PathVariable parentId: Long): Flux<Category> =
         service.getSubcategoriesByParentId(parentId)

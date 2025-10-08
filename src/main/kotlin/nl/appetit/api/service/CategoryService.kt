@@ -12,6 +12,7 @@ class CategoryService(
 ) {
     fun getAllCategories(): Flux<Category> = 
         db.findAll()
+            .sort { c1, c2 -> (c1.order ?: 0).compareTo(c2.order ?: 0) }
 
     fun insertCategory(category: Category): Mono<Category> =
         db.save(category)
@@ -29,6 +30,18 @@ class CategoryService(
                 db.save(updated)
             }
 
+    fun updateCategoryOrder(ids: List<Long>): Mono<Void> {
+        return Flux.fromIterable(ids.withIndex())
+            .flatMap { (order, id) ->
+                db.findById(id)
+                    .flatMap { category ->
+                        db.save(category.copy(order = order))
+                    }
+            }
+            .then()
+    }
+
     fun getSubcategoriesByParentId(parentId: Long): Flux<Category> =
         db.findByParentId(parentId)
+
 }
