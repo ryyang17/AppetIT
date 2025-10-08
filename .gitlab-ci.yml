@@ -1,22 +1,17 @@
 # .gitlab-ci.yml
-image: openjdk:24-jdk-slim
+image: docker:28.5-cli
 
 stages:
   - build
   - test
   - package
 
-before_script:
-  - apt-get update && apt-get install -y findutils
-  - java -version
-  - ./gradlew --version
-  - ./gradlew clean
-
 # Build stage
 build:
   stage: build
+  image: openjdk:24-jdk-slim
   script:
-    - ./gradlew clean assemble --no-daemon
+    - ./gradlew clean bootJar --no-daemon
   artifacts:
     paths:
       - build/libs/
@@ -25,6 +20,7 @@ build:
 # Test stage
 test:
   stage: test
+  image: openjdk:24-jdk-slim
   script:
     - ./gradlew test --no-daemon
   artifacts:
@@ -37,21 +33,19 @@ test:
 pacakge_prod:
   stage: package
   script:
-    - export COMMIT_HASH="$CI_COMMIT_SHORT_SHA"
-    - export DEPLOYMENT_TYPE="latest"
-    - export DOCKER_USERNAME="$DOCKER_USERNAME"
-    - export DOCKER_PASSWORD="$DOCKER_PASSWORD"
-    - ./gradlew bootBuildImage --no-daemon
+    - docker build -t 547988/appetit-api:latest -t 547988/appetit-api:$CI_COMMIT_SHORT_SHA .
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - docker push 547988/appetit-api:latest
+    - docker push 547988/appetit-api:$CI_COMMIT_SHORT_SHA
   only:
     - main
 
 package_staging:
   stage: package
   script:
-    - export COMMIT_HASH="$CI_COMMIT_SHORT_SHA"
-    - export DEPLOYMENT_TYPE="staging"
-    - export DOCKER_USERNAME="$DOCKER_USERNAME"
-    - export DOCKER_PASSWORD="$DOCKER_PASSWORD"
-    - ./gradlew bootBuildImage --no-daemon
+    - docker build -t 547988/appetit-api:staging -t 547988/appetit-api:$CI_COMMIT_SHORT_SHA .
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - docker push 547988/appetit-api:staging
+    - docker push 547988/appetit-api:$CI_COMMIT_SHORT_SHA
   only:
     - staging

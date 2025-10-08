@@ -21,6 +21,10 @@ data class Category(
 	@Column("updated_at")
 	val updatedAt: Instant? = null,
 
+    @Column("parent_id")
+    val parentId: Long? = null
+)
+
 	@Column("category_order")
 	val order: Int? = null
 )

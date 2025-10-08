@@ -41,4 +41,7 @@ class CategoryService(
             .then()
     }
 
+    fun getSubcategoriesByParentId(parentId: Long): Flux<Category> =
+        db.findByParentId(parentId)
+
 }
