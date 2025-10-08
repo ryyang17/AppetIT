@@ -1,5 +1,5 @@
 # .gitlab-ci.yml
-image: openjdk:21-jdk-slim
+image: openjdk:25-jdk-slim
 
 stages:
   - build
