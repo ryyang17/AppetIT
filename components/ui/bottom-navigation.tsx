@@ -5,6 +5,7 @@ import { Search, Home, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useCart } from "@/contexts/CartContext";
 
 interface BottomNavigationItem {
   icon: React.ReactNode;
@@ -23,6 +24,8 @@ export function BottomNavigation({
   className 
 }: BottomNavigationProps) {
   const pathname = usePathname();
+  const { getTotalItems } = useCart();
+  const totalCartItems = getTotalItems();
   
   const items: BottomNavigationItem[] = [
     {
@@ -42,7 +45,7 @@ export function BottomNavigation({
       label: "Cart",
       href: "/cart",
       active: pathname === "/cart",
-      badge: 2,
+      badge: totalCartItems > 0 ? totalCartItems : undefined,
     },
   ];
   return (

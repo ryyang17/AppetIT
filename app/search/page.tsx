@@ -5,12 +5,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BottomNavigation } from "@/components/ui/bottom-navigation";
 import { ProductDetailModal } from "@/components/ui/product-detail-modal";
 import { useProducts } from "@/hooks/useProducts";
+import { useCart } from "@/contexts/CartContext";
 import { Search, Mic, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Product } from "@/lib/api";
 
 export default function SearchPage() {
   const { products, loading, error } = useProducts();
+  const { addToCart } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,8 +28,8 @@ export default function SearchPage() {
   };
 
   const handleAddToCart = (product: Product, quantity: number) => {
+    addToCart(product, quantity);
     console.log(`Added ${quantity}x ${product.name} to cart`);
-    alert(`Added ${quantity}x ${product.name} to cart!`);
   };
 
   // Filter products based on search query
