@@ -19,6 +19,9 @@ data class Category(
 	val createdAt: Instant? = null,
 
 	@Column("updated_at")
-	val updatedAt: Instant? = null
+	val updatedAt: Instant? = null,
+
+    @Column("parent_id")
+    val parentId: Long? = null
 )
 
