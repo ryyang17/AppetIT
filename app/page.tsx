@@ -84,45 +84,66 @@ export default function Home() {
                     </div>
                   )}
 
-                  {/* Products */}
+                  {/* Categories and Products */}
                   {!loading && !error && (
-                    <div>
+                    <div className="space-y-6">
                       
-                      <div className="grid grid-cols-2 gap-3">
-                        {products.map((product) => (
-                          <Card 
-                            key={product.id} 
-                            className="overflow-hidden cursor-pointer transition-transform hover:scale-105"
-                            onClick={() => handleProductClick(product)}
-                          >
-                            <CardContent className="p-0">
-                              <div className="aspect-square bg-gray-100 relative flex items-center justify-center">
-                                <img 
-                                  src={product?.imageUrl}
-                                  alt={product.name}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    // Fallback to placeholder if image doesn't exist
-                                    const target = e.target as HTMLImageElement;
-                                    target.style.display = 'none';
-                                    target.nextElementSibling?.classList.remove('hidden');
-                                  }}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center hidden">
-                                  <span className="text-gray-500 font-medium text-2xl">🍽</span>
-                                </div>
-                              </div>
-                              <div className="p-3">
-                                <h3 className="font-medium text-gray-800 line-clamp-1">{product.name}</h3>
-                                <p className="text-gray-600 text-sm">€{product.price.toFixed(2)}</p>
-                                {product.description && (
-                                  <p className="text-gray-500 text-xs mt-1 line-clamp-2">{product.description}</p>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
+                      {/* Voorgerecht Category */}
+                      <div>
+                        <h2 className="text-lg font-semibold text-gray-800 mb-3 px-1">Voorgerecht</h2>
+                        <div className="text-center py-8 text-gray-500">
+                          <p className="text-sm">Binnenkort beschikbaar</p>
+                        </div>
                       </div>
+
+                      {/* Hoofdgerecht Category */}
+                      <div>
+                        <h2 className="text-lg font-semibold text-gray-800 mb-3 px-1">Hoofdgerecht</h2>
+                        <div className="grid grid-cols-2 gap-3">
+                          {products.map((product) => (
+                            <Card 
+                              key={product.id} 
+                              className="overflow-hidden cursor-pointer transition-transform hover:scale-105"
+                              onClick={() => handleProductClick(product)}
+                            >
+                              <CardContent className="p-0">
+                                <div className="aspect-square bg-gray-100 relative flex items-center justify-center">
+                                  <img 
+                                    src={product?.imageUrl}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      // Fallback to placeholder if image doesn't exist
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      target.nextElementSibling?.classList.remove('hidden');
+                                    }}
+                                  />
+                                  <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center hidden">
+                                    <span className="text-gray-500 font-medium text-2xl">🍽</span>
+                                  </div>
+                                </div>
+                                <div className="p-3">
+                                  <h3 className="font-medium text-gray-800 line-clamp-1">{product.name}</h3>
+                                  <p className="text-gray-600 text-sm">€{product.price.toFixed(2)}</p>
+                                  {product.description && (
+                                    <p className="text-gray-500 text-xs mt-1 line-clamp-2">{product.description}</p>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Nagerecht Category */}
+                      <div>
+                        <h2 className="text-lg font-semibold text-gray-800 mb-3 px-1">Nagerecht</h2>
+                        <div className="text-center py-8 text-gray-500">
+                          <p className="text-sm">Binnenkort beschikbaar</p>
+                        </div>
+                      </div>
+
                     </div>
                   )}
 
