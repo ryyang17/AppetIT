@@ -55,7 +55,7 @@ deploy_staging:
   stage: deploy
   tags: [appetit_deploy]
   script:
-    - cd /srv/appetit
+    - cd /srv/appetit-api
     - docker compose pull staging
     - docker compose up -d staging
   only:
@@ -65,7 +65,7 @@ deploy_prod:
   stage: deploy
   tags: [appetit_deploy]
   script:
-    - cd /srv/appetit
+    - cd /srv/appetit-api
     - docker compose pull prod
     - docker compose up -d prod
   only:
