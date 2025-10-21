@@ -78,15 +78,18 @@ class CategoryService(
                 db.save(updated)
             }
 
-    fun updateCategoryOrder(ids: List<Long>): Mono<Void> {
-        return Flux.fromIterable(ids.withIndex())
-            .flatMap { (order, id) ->
-                db.findById(id)
-                    .flatMap { category ->
-                        db.save(category.copy(order = order))
-                    }
+    /**
+     * Moves a category to a different parent.
+     * Updates the parentId to change the hierarchy level of a category.
+     * Example: Move "Pizza" from "Food" parent to "Beverages" parent
+     */
+    fun moveCategory(categoryId: Long, newParentId: Long?): Mono<Category> {
+        return db.findById(categoryId)
+            .switchIfEmpty(Mono.error(RuntimeException("Category not found with id: $categoryId")))
+            .flatMap { category ->
+                val updated = category.copy(parentId = newParentId)
+                db.save(updated)
             }
-            .then()
     }
 
     fun getSubcategoriesByParentId(parentId: Long): Flux<Category> =

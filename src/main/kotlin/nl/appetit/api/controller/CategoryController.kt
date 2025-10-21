@@ -15,6 +15,11 @@ data class CategoryRequest(
     val parentId: Long? = null
 )
 
+data class MoveCategoryRequest(
+	val categoryId: Long,
+	val newParentId: Long?
+)
+
 fun CategoryRequest.toEntity() = Category(
 	name = this.name,
     parentId = this.parentId
@@ -74,9 +79,11 @@ class CategoryController(
             service.updateCategory(id, category.toEntity())
         }
 
-    @PutMapping("/CategoryOrder")
-    fun updateOrder(@RequestBody ids: List<Long>): Mono<Void> {
-        return service.updateCategoryOrder(ids)
+    @PutMapping("/move")
+    fun moveCategory(@RequestBody request: Mono<MoveCategoryRequest>): Mono<Category> {
+        return request.flatMap { moveReq ->
+            service.moveCategory(moveReq.categoryId, moveReq.newParentId)
+        }
     }
 
     @GetMapping("/subcategory/{parentId}")
