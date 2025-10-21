@@ -39,61 +39,36 @@ export default function SearchPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-2">
-      {/* Phone Frame */}
-      <div className="relative">
-        {/* Phone Outer Frame */}
-        <div className="bg-black rounded-[2rem] sm:rounded-[3rem] p-1 sm:p-2 shadow-2xl">
-          {/* Phone Inner Frame */}
-          <div className="bg-gray-900 rounded-[1.5rem] sm:rounded-[2.5rem] p-0.5 sm:p-1">
-            {/* Phone Screen */}
-            <div className="bg-white rounded-[1rem] sm:rounded-[2rem] overflow-hidden w-[280px] h-[560px] sm:w-[320px] sm:h-[640px] relative">
-              
-              {/* Status Bar */}
-              <div className="bg-white px-6 py-2 flex justify-between items-center text-black text-sm font-medium">
-                <span>9:41</span>
-                <div className="flex items-center space-x-1">
-                  <div className="flex space-x-1">
-                    <div className="w-1 h-1 bg-black rounded-full"></div>
-                    <div className="w-1 h-1 bg-black rounded-full"></div>
-                    <div className="w-1 h-1 bg-black rounded-full"></div>
-                    <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-                  </div>
-                  <div className="w-6 h-3 border border-black rounded-sm">
-                    <div className="w-4 h-2 bg-black rounded-sm ml-0.5 mt-0.5"></div>
-                  </div>
-                </div>
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* App Content Container */}
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        
+        {/* Header */}
+        <div className="bg-white p-4 sm:p-6 shadow-sm sticky top-0 z-10">
+          <div className="flex items-center mb-3">
+            <Link href="/">
+              <ArrowLeft className="h-6 w-6 text-gray-600 mr-3" />
+            </Link>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Search Food</h1>
+          </div>
+          
+          {/* Search Bar */}
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <input
+              type="text"
+              placeholder="Search for food, restaurants..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
+            <Mic className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          </div>
+        </div>
 
-              {/* App Content Container */}
-              <div className="flex flex-col h-[calc(100%-2rem)] bg-gray-50">
-                
-                {/* Header */}
-                <div className="bg-white p-4 shadow-sm">
-                  <div className="flex items-center mb-3">
-                    <Link href="/">
-                      <ArrowLeft className="h-6 w-6 text-gray-600 mr-3" />
-                    </Link>
-                    <h1 className="text-xl font-semibold text-gray-800">Search Food</h1>
-                  </div>
-                  
-                  {/* Search Bar */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <input
-                      type="text"
-                      placeholder="Search for food, restaurants..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      autoFocus
-                    />
-                    <Mic className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  </div>
-                </div>
-
-                {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-20">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 pb-20 max-w-4xl mx-auto w-full">
                   {/* Loading State */}
                   {loading && (
                     <div className="flex justify-center items-center py-8">
@@ -123,7 +98,7 @@ export default function SearchPage() {
                           <p className="text-sm">Try different keywords</p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                           {filteredProducts.map((product) => (
                             <Card 
                               key={product.id} 
@@ -184,14 +159,12 @@ export default function SearchPage() {
                   onAddToCart={handleAddToCart}
                 />
 
+                {/* Bottom Navigation - Fixed at bottom */}
+                <div className="fixed bottom-0 left-0 right-0">
+                  <BottomNavigation />
+                </div>
+
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Home Indicator (iPhone style) */}
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-white rounded-full"></div>
-      </div>
-    </div>
-  );
-}
+          );
+        }
