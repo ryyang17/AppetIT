@@ -18,6 +18,68 @@ export const fetchProduct = async (id: string) => {
   return response.json();
 };
 
+export const fetchCategories = async () => {
+  const response = await fetch(`${API_BASE_URL}/categories`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch categories');
+  }
+  return response.json();
+};
+
+export const fetchOrders = async () => {
+  const response = await fetch(`${API_BASE_URL}/orders`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch orders');
+  }
+  return response.json();
+};
+
+export const fetchOrderItems = async () => {
+  const response = await fetch(`${API_BASE_URL}/order-items`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch order items');
+  }
+  return response.json();
+};
+
+export const createOrder = async (orderData: { status: string }) => {
+  const response = await fetch(`${API_BASE_URL}/orders`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(orderData),
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to create order');
+  }
+  
+  return response.json();
+};
+
+export const createOrderItem = async (orderItemData: {
+  orderId: number;
+  productId: number;
+  quantity: number;
+  price: number;
+  status: string;
+}) => {
+  const response = await fetch(`${API_BASE_URL}/order-items`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(orderItemData),
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to create order item');
+  }
+  
+  return response.json();
+};
+
 export const createProduct = async (data: any) => {
   const response = await fetch(`${API_BASE_URL}/products`, {
     method: 'POST',
@@ -55,4 +117,27 @@ export interface Product {
   categoryId: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  parentId?: number;
+}
+
+export interface Order {
+  id: number;
+  status: string;
+  createdAt: string;
+  totalAmount?: number;
+}
+
+export interface OrderItem {
+  id: number;
+  orderId: number;
+  productId: number;
+  quantity: number;
+  price: number;
+  status: string;
+  product: Product;
 }
