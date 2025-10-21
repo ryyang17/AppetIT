@@ -273,7 +273,8 @@ export default function CartPage() {
                           .map((order) => {
                             const items = groupedOrderItems[order.id] || [];
                             const orderTotal = items.reduce((sum, item) => {
-                              const itemPrice = item.price || item.product?.price || 0;
+                              // Use the price from orderItem if available, otherwise 0
+                              const itemPrice = item.price || 0;
                               const itemQuantity = item.quantity || 0;
                               return sum + (itemPrice * itemQuantity);
                             }, 0);
@@ -320,23 +321,11 @@ export default function CartPage() {
                                       <div key={orderItem.id} className="flex items-center justify-between py-2">
                                         <div className="flex items-center space-x-3">
                                           <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                                            {orderItem.product?.imageUrl ? (
-                                              <img 
-                                                src={orderItem.product.imageUrl} 
-                                                alt={orderItem.product.name || 'Product'}
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => {
-                                                  const target = e.target as HTMLImageElement;
-                                                  target.style.display = 'none';
-                                                  target.nextElementSibling?.classList.remove('hidden');
-                                                }}
-                                              />
-                                            ) : null}
-                                            <span className={`text-lg ${orderItem.product?.imageUrl ? 'hidden' : ''}`}>🍽</span>
+                                            <span className="text-lg">🍽</span>
                                           </div>
                                           <div>
-                                            <h4 className="font-medium text-gray-800">{orderItem.product?.name || `Product ID: ${orderItem.productId}`}</h4>
-                                            <p className="text-sm text-gray-600">€{(orderItem.price || orderItem.product?.price || 0).toFixed(2)}</p>
+                                            <h4 className="font-medium text-gray-800">Product ID: {orderItem.productId}</h4>
+                                            <p className="text-sm text-gray-600">€{(orderItem.price || 0).toFixed(2)}</p>
                                           </div>
                                         </div>
                                         <div className="text-right">
