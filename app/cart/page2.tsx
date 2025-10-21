@@ -105,10 +105,10 @@ export default function CartPage() {
                           <div className="flex items-center space-x-3">
                             {/* Product Image */}
                             <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                              {item.imageUrl ? (
+                              {item.product.imageUrl ? (
                                 <img 
-                                  src={item.imageUrl} 
-                                  alt={item.name}
+                                  src={item.product.imageUrl}
+                                  alt={item.product.name}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
                                     // Fallback to placeholder if image doesn't exist
@@ -118,15 +118,15 @@ export default function CartPage() {
                                   }}
                                 />
                               ) : null}
-                              <div className={`text-2xl ${item.imageUrl ? 'hidden' : ''}`}>
+                              <div className={`text-2xl ${item.product.imageUrl ? 'hidden' : ''}`}>
                                 🍽
                               </div>
                             </div>
                             
                             {/* Product Details */}
                             <div className="flex-1">
-                              <h3 className="font-medium text-gray-800">{item.name}</h3>
-                              <p className="text-green-600 font-semibold">€{item.price.toFixed(2)}</p>
+                              <h3 className="font-medium text-gray-800">{item.product.name}</h3>
+                              <p className="text-green-600 font-semibold">€{item.product.price.toFixed(2)}</p>
                             </div>
                             
                             {/* Controls Column */}

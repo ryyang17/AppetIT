@@ -1,20 +1,16 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Product } from '@/lib/api';
 
 export interface CartItem {
-  id: number;
-  name: string;
-  price: number;
+  product: Product;
   quantity: number;
-  imageUrl?: string;
-  product: Product; // Keep reference to original product
 }
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (product: Product, quantity: number) => void;
+  addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (id: number) => void;
   updateQuantity: (id: number, quantity: number) => void;
   getTotalItems: () => number;
@@ -24,30 +20,56 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const CART_STORAGE_KEY = 'appetit-cart';
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-  const addToCart = (product: Product, quantity: number) => {
+  // Load cart from localStorage on component mount
+  useEffect(() => {
+    loadCartFromStorage();
+  }, []);
+
+  // Save cart to localStorage whenever cartItems changes
+  useEffect(() => {
+    saveCartToStorage();
+  }, [cartItems]);
+
+  const loadCartFromStorage = () => {
+    try {
+      const savedCart = localStorage.getItem(CART_STORAGE_KEY);
+      if (savedCart) {
+        const parsedCart = JSON.parse(savedCart);
+        setCartItems(parsedCart);
+      }
+    } catch (error) {
+      console.error('Failed to load cart from storage:', error);
+    }
+  };
+
+  const saveCartToStorage = () => {
+    try {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+    } catch (error) {
+      console.error('Failed to save cart to storage:', error);
+    }
+  };
+
+  const addToCart = (product: Product, quantity: number = 1) => {
+    console.log('Adding to cart:', product.name);
     setCartItems(prevItems => {
-      // Check if item already exists in cart
       const existingItem = prevItems.find(item => item.product.id === product.id);
       
       if (existingItem) {
-        // Update quantity of existing item
         return prevItems.map(item =>
           item.product.id === product.id 
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       } else {
-        // Add new item to cart
         const newCartItem: CartItem = {
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          quantity: quantity,
-          imageUrl: product.imageUrl,
-          product: product
+          product: product,
+          quantity: quantity
         };
         return [...prevItems, newCartItem];
       }
@@ -76,11 +98,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const getSubtotal = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cartItems.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   };
 
   const clearCart = () => {
     setCartItems([]);
+    localStorage.removeItem(CART_STORAGE_KEY);
   };
 
   return (

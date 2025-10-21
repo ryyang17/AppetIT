@@ -1,46 +1,61 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { Order, fetchOrders } from "@/lib/api";
+import { useState, useEffect } from 'react';
+import { fetchOrders, fetchOrderItems, fetchProducts, Order, OrderItem, Product } from '@/lib/api';
 
 export function useOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadOrders = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchOrders();
-        setOrders(data);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching orders:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadOrders();
-  }, []);
-
-  const refetchOrders = async () => {
+  const loadOrders = async () => {
     try {
-      setError(null);
-      const data = await fetchOrders();
-      setOrders(data);
+      setLoading(true);
+      const [ordersData, orderItemsData, productsData] = await Promise.all([
+        fetchOrders(),
+        fetchOrderItems(),
+        fetchProducts()
+      ]);
+      
+      // Map product data to order items
+      const enrichedOrderItems = orderItemsData.map(orderItem => {
+        const product = productsData.find(p => p.id === orderItem.productId);
+        return {
+          ...orderItem,
+          product: product || {
+            id: orderItem.productId,
+            name: `Product ID: ${orderItem.productId}`,
+            price: orderItem.price,
+            description: '',
+            imageUrl: '',
+            available: true,
+            categoryId: null,
+            createdAt: '',
+            updatedAt: ''
+          }
+        };
+      });
+      
+      setOrders(ordersData);
+      setOrderItems(enrichedOrderItems);
+      setProducts(productsData);
     } catch (err) {
-      console.error('Error refetching orders:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      setError(err instanceof Error ? err.message : 'Failed to load orders');
+    } finally {
+      setLoading(false);
     }
   };
 
-  return { 
-    orders, 
-    loading, 
-    error, 
-    refetchOrders 
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  return {
+    orders,
+    orderItems,
+    products,
+    loading,
+    error,
+    refreshOrders: loadOrders
   };
 }

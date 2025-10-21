@@ -2,7 +2,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 // Simple API functions
-export const fetchProducts = async () => {
+export const fetchProducts = async (): Promise<Product[]> => {
   const response = await fetch(`${API_BASE_URL}/products`);
   if (!response.ok) {
     throw new Error('Failed to fetch products');
@@ -10,7 +10,7 @@ export const fetchProducts = async () => {
   return response.json();
 };
 
-export const fetchProduct = async (id: string) => {
+export const fetchProduct = async (id: string): Promise<Product> => {
   const response = await fetch(`${API_BASE_URL}/products/${id}`);
   if (!response.ok) {
     throw new Error('Failed to fetch product');
@@ -18,7 +18,7 @@ export const fetchProduct = async (id: string) => {
   return response.json();
 };
 
-export const fetchCategories = async () => {
+export const fetchCategories = async (): Promise<Category[]> => {
   const response = await fetch(`${API_BASE_URL}/categories`);
   if (!response.ok) {
     throw new Error('Failed to fetch categories');
@@ -26,7 +26,7 @@ export const fetchCategories = async () => {
   return response.json();
 };
 
-export const fetchOrders = async () => {
+export const fetchOrders = async (): Promise<Order[]> => {
   const response = await fetch(`${API_BASE_URL}/orders`);
   if (!response.ok) {
     throw new Error('Failed to fetch orders');
@@ -34,7 +34,7 @@ export const fetchOrders = async () => {
   return response.json();
 };
 
-export const fetchOrderItems = async () => {
+export const fetchOrderItems = async (): Promise<OrderItem[]> => {
   const response = await fetch(`${API_BASE_URL}/order-items`);
   if (!response.ok) {
     throw new Error('Failed to fetch order items');
@@ -42,7 +42,7 @@ export const fetchOrderItems = async () => {
   return response.json();
 };
 
-export const createOrder = async (orderData: { status: string }) => {
+export const createOrder = async (orderData: { status: string }): Promise<Order> => {
   const response = await fetch(`${API_BASE_URL}/orders`, {
     method: 'POST',
     headers: {
@@ -64,7 +64,7 @@ export const createOrderItem = async (orderItemData: {
   quantity: number;
   price: number;
   status: string;
-}) => {
+}): Promise<OrderItem> => {
   const response = await fetch(`${API_BASE_URL}/order-items`, {
     method: 'POST',
     headers: {
