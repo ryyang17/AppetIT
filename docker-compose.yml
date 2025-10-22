@@ -1,0 +1,21 @@
+version: '3.9'
+
+services:
+  staging:
+    image: 547988/appetit-user-app:staging
+    container_name: appetit-user-app-staging
+    environment:
+      - API_BASE_URL=192.168.106.40:8081
+    ports:
+      - "3000:3000"
+    restart: always
+
+  prod:
+    image: 547988/appetit-user-app:latest
+    container_name: appetit-user-app-prod
+    environment:
+      - API_BASE_URL=192.168.106.40:8082
+    ports:
+      - "3001:3000"
+    restart: always
+
