@@ -57,9 +57,7 @@ export default function CartPage() {
 
   // Calculate totals
   const subtotal = getSubtotal();
-  const deliveryFee = 2.50;
-  const serviceFee = 1.50;
-  const total = subtotal + deliveryFee + serviceFee;
+  const total = subtotal;
 
   // Group orderItems by orderId
   const groupedOrderItems = orderItems.reduce((acc, item) => {
@@ -208,14 +206,6 @@ export default function CartPage() {
                               <span className="text-gray-600">Subtotal</span>
                               <span className="text-gray-800">€{subtotal.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Delivery Fee</span>
-                              <span className="text-gray-800">€{deliveryFee.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Service Fee</span>
-                              <span className="text-gray-800">€{serviceFee.toFixed(2)}</span>
-                            </div>
                             <div className="border-t border-gray-200 pt-2 mt-2">
                               <div className="flex justify-between font-semibold text-lg">
                                 <span>Total</span>
@@ -248,7 +238,7 @@ export default function CartPage() {
                           .map((order) => {
                             const items = groupedOrderItems[order.id] || [];
                             const orderTotal = items.reduce((sum, item) => {
-                              // Use the price from orderItem if available, otherwise 0
+                              // Use the enriched price from the hook
                               const itemPrice = item.price || 0;
                               const itemQuantity = item.quantity || 0;
                               return sum + (itemPrice * itemQuantity);
@@ -296,10 +286,24 @@ export default function CartPage() {
                                       <div key={orderItem.id} className="flex items-center justify-between py-2">
                                         <div className="flex items-center space-x-3">
                                           <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                                            <span className="text-lg">🍽</span>
+                                            {(orderItem as any).product?.imageUrl ? (
+                                              <img 
+                                                src={(orderItem as any).product.imageUrl} 
+                                                alt={(orderItem as any).product.name || 'Product'}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                  const target = e.target as HTMLImageElement;
+                                                  target.style.display = 'none';
+                                                  target.nextElementSibling?.classList.remove('hidden');
+                                                }}
+                                              />
+                                            ) : null}
+                                            <span className={`text-lg ${(orderItem as any).product?.imageUrl ? 'hidden' : ''}`}>🍽</span>
                                           </div>
                                           <div>
-                                            <h4 className="font-medium text-gray-800">Product ID: {orderItem.productId}</h4>
+                                            <h4 className="font-medium text-gray-800">
+                                              {(orderItem as any).product?.name || `Product ID: ${orderItem.productId}`}
+                                            </h4>
                                             <p className="text-sm text-gray-600">€{(orderItem.price || 0).toFixed(2)}</p>
                                           </div>
                                         </div>

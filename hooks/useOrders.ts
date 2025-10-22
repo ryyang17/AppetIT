@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchOrders, fetchOrderItems, Order, OrderItem } from '@/lib/api';
+import { fetchOrders, fetchOrderItems, fetchProducts, Order, OrderItem, Product } from '@/lib/api';
 
 export function useOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -10,12 +10,25 @@ export function useOrders() {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      const [ordersData, orderItemsData] = await Promise.all([
+      const [ordersData, orderItemsData, productsData] = await Promise.all([
         fetchOrders(),
-        fetchOrderItems()
+        fetchOrderItems(),
+        fetchProducts()
       ]);
+      
+      // Enrich order items with product data
+      const enrichedOrderItems = orderItemsData.map(orderItem => {
+        const product = productsData.find(p => p.id === orderItem.productId);
+        return {
+          ...orderItem,
+          product: product || undefined,
+          // Use product price if orderItem price is missing or 0
+          price: orderItem.price && orderItem.price > 0 ? orderItem.price : product?.price || 0
+        } as OrderItem & { product?: Product };
+      });
+      
       setOrders(ordersData);
-      setOrderItems(orderItemsData);
+      setOrderItems(enrichedOrderItems);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load orders');
     } finally {
