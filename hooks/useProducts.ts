@@ -1,18 +1,23 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { fetchProducts, createProduct, deleteProduct, Product } from '@/lib/api';
+import { fetchProducts, createProduct, deleteProduct, fetchCategories, Product, Category } from '@/lib/api';
 
 export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const data = await fetchProducts();
-      setProducts(data);
+      const [productsData, categoriesData] = await Promise.all([
+        fetchProducts(),
+        fetchCategories()
+      ]);
+      setProducts(productsData);
+      setCategories(categoriesData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch products');
     } finally {
@@ -34,5 +39,5 @@ export function useProducts() {
     loadProducts();
   }, []);
 
-  return { products, loading, error, addProduct, removeProduct, refreshProducts: loadProducts };
+  return { products, categories, loading, error, addProduct, removeProduct, refreshProducts: loadProducts };
 }

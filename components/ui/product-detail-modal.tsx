@@ -33,9 +33,9 @@ export function ProductDetailModal({
   const decrementQuantity = () => setQuantity(prev => prev > 1 ? prev - 1 : 1);
 
   return (
-    <div className="fixed top-16 bottom-24 left-0 right-0 z-40 flex items-center justify-center p-4">
+    <div className="fixed top-20 bottom-13 left-0 right-0 z-40 flex items-center justify-center p-4">
       {/* Background overlay */}
-      <div className="absolute inset-0 bg-black bg-opacity-80" onClick={onClose}></div>
+      <div className="absolute top-0 left-0 right-0 bottom-0 bg-black/30 backdrop-blur-sm" onClick={onClose}></div>
       
       <Card className="relative z-50 w-full max-w-md max-h-full bg-white rounded-xl overflow-hidden shadow-2xl flex flex-col border-0">
         <CardContent className="p-0 flex flex-col max-h-full overflow-y-auto">
