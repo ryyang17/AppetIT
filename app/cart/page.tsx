@@ -5,11 +5,14 @@ import { ShoppingCart, ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "@/contexts/CartContext";
 import { useOrders } from "@/hooks/useOrders";
-import { createOrder, createOrderItem } from "@/lib/api";
+import { createOrder } from "@/app/actions/order";
+import { createOrderItem } from "../actions/orderItem";
 import { useState } from "react";
+import { OrderItem } from "@/lib/interfaces/order";
+import Image from "next/image";
 
 export default function CartPage() {
-  const { cartItems, updateQuantity, removeFromCart, getTotalItems, getSubtotal, clearCart } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, getSubtotal, clearCart } = useCart();
   const { orders, orderItems, refreshOrders } = useOrders();
   const [viewMode, setViewMode] = useState<'cart' | 'orders'>('cart');
   
@@ -138,11 +141,13 @@ export default function CartPage() {
                             <div key={item.product.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
                               <div className="flex items-center space-x-3">
                                 {/* Product Image */}
-                                <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                                <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
                                   {item.product.imageUrl ? (
-                                    <img 
+                                    <Image 
                                       src={item.product.imageUrl} 
                                       alt={item.product.name}
+                                      objectFit="cover"
+                                      fill
                                       className="w-full h-full object-cover"
                                       onError={(e) => {
                                         const target = e.target as HTMLImageElement;
@@ -285,12 +290,14 @@ export default function CartPage() {
                                     {items.map((orderItem) => (
                                       <div key={orderItem.id} className="flex items-center justify-between py-2">
                                         <div className="flex items-center space-x-3">
-                                          <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                                            {(orderItem as any).product?.imageUrl ? (
-                                              <img 
-                                                src={(orderItem as any).product.imageUrl} 
-                                                alt={(orderItem as any).product.name || 'Product'}
+                                          <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                                            {(orderItem as OrderItem).product?.imageUrl ? (
+                                              <Image 
+                                                src={(orderItem as OrderItem).product.imageUrl} 
+                                                alt={(orderItem as OrderItem).product.name || 'Product'}
                                                 className="w-full h-full object-cover"
+                                                objectFit="cover"
+                                                fill
                                                 onError={(e) => {
                                                   const target = e.target as HTMLImageElement;
                                                   target.style.display = 'none';
@@ -298,11 +305,11 @@ export default function CartPage() {
                                                 }}
                                               />
                                             ) : null}
-                                            <span className={`text-lg ${(orderItem as any).product?.imageUrl ? 'hidden' : ''}`}>🍽</span>
+                                            <span className={`text-lg ${(orderItem as OrderItem).product?.imageUrl ? 'hidden' : ''}`}>🍽</span>
                                           </div>
                                           <div>
                                             <h4 className="font-medium text-gray-800">
-                                              {(orderItem as any).product?.name || `Product ID: ${orderItem.productId}`}
+                                              {(orderItem as OrderItem).product?.name || `Product ID: ${orderItem.productId}`}
                                             </h4>
                                             <p className="text-sm text-gray-600">€{(orderItem.price || 0).toFixed(2)}</p>
                                           </div>

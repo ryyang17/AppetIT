@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { Product } from '@/lib/api';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import { Product } from '@/lib/interfaces/product';
 
 export interface CartItem {
   product: Product;
@@ -25,17 +25,7 @@ const CART_STORAGE_KEY = 'appetit-cart';
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-  // Load cart from localStorage on component mount
-  useEffect(() => {
-    loadCartFromStorage();
-  }, []);
-
-  // Save cart to localStorage whenever cartItems changes
-  useEffect(() => {
-    saveCartToStorage();
-  }, [cartItems]);
-
-  const loadCartFromStorage = () => {
+  const loadCartFromStorage = useCallback(() => {
     try {
       const savedCart = localStorage.getItem(CART_STORAGE_KEY);
       if (savedCart) {
@@ -45,15 +35,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Failed to load cart from storage:', error);
     }
-  };
+  }, []);
 
-  const saveCartToStorage = () => {
+  const saveCartToStorage = useCallback(() => {
     try {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
     } catch (error) {
       console.error('Failed to save cart to storage:', error);
     }
-  };
+  }, [cartItems]);
+
+    // Load cart from localStorage on component mount
+  useEffect(() => {
+    loadCartFromStorage();
+  }, [loadCartFromStorage]);
+
+  // Save cart to localStorage whenever cartItems changes
+  useEffect(() => {
+    saveCartToStorage();
+  }, [saveCartToStorage]);
 
   const addToCart = (product: Product, quantity: number = 1) => {
     console.log('Adding to cart:', product.name);
