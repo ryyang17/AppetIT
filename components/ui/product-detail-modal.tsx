@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { X, Plus, Minus, ShoppingCart } from "lucide-react";
-import { Product } from "@/lib/api";
+import { Product } from "@/lib/interfaces/product";
+import Image from "next/image";
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -50,10 +51,12 @@ export function ProductDetailModal({
               <X className="h-5 w-5" />
             </Button>
             
-            <img 
+            <Image
               src={product.imageUrl}
               alt={product.name}
               className="w-full h-full object-cover"
+              objectFit="cover"
+              layout="fill"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';

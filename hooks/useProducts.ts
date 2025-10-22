@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { fetchProducts, createProduct, deleteProduct, fetchCategories, Product, Category } from '@/lib/api';
+import { fetchProducts, createProduct, deleteProduct} from '@/app/actions/product';
+import { fetchCategories } from '@/app/actions/category';
+import { Product } from '@/lib/interfaces/product';
+import { Category } from '@/lib/interfaces/category';
 
 export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -25,7 +28,7 @@ export function useProducts() {
     }
   };
 
-  const addProduct = async (data: any) => {
+  const addProduct = async (data: Product) => {
     const newProduct = await createProduct(data);
     setProducts(prev => [...prev, newProduct]);
   };

@@ -6,8 +6,9 @@ import { BottomNavigation } from "@/components/ui/bottom-navigation";
 import { ProductDetailModal } from "@/components/ui/product-detail-modal";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
-import { Search, Mic, Loader2 } from "lucide-react";
-import { Product } from "@/lib/api";
+import { Loader2 } from "lucide-react";
+import { Product } from "@/lib/interfaces/product";
+import Image from "next/image";
 
 export default function Home() {
   const { products, categories, loading, error } = useProducts();
@@ -122,10 +123,12 @@ export default function Home() {
                                 >
                                   <CardContent className="p-0">
                                     <div className="aspect-square bg-gray-100 relative flex items-center justify-center">
-                                      <img 
+                                      <Image 
                                         src={product?.imageUrl}
                                         alt={product.name}
                                         className="w-full h-full object-cover"
+                                        objectFit="cover"
+                                        layout="fill"
                                         onError={(e) => {
                                           const target = e.target as HTMLImageElement;
                                           target.style.display = 'none';

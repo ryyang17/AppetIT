@@ -4,9 +4,10 @@ import { BottomNavigation } from "@/components/ui/bottom-navigation";
 import { ShoppingCart, ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "@/contexts/CartContext";
+import Image from "next/image";
 
 export default function CartPage() {
-  const { cartItems, updateQuantity, removeFromCart, getTotalItems, getSubtotal, clearCart } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, getSubtotal, clearCart } = useCart();
   
   const incrementQuantity = (id: number) => {
     const item = cartItems.find(item => item.product.id === id);
@@ -106,10 +107,12 @@ export default function CartPage() {
                             {/* Product Image */}
                             <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
                               {item.product.imageUrl ? (
-                                <img 
+                                <Image 
                                   src={item.product.imageUrl}
                                   alt={item.product.name}
                                   className="w-full h-full object-cover"
+                                  objectFit="cover"
+                                  layout="fill"
                                   onError={(e) => {
                                     // Fallback to placeholder if image doesn't exist
                                     const target = e.target as HTMLImageElement;

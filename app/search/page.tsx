@@ -8,7 +8,8 @@ import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import { Search, Mic, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { Product } from "@/lib/api";
+import { Product } from "@/lib/interfaces/product";
+import Image from "next/image";
 
 export default function SearchPage() {
   const { products, loading, error } = useProducts();
@@ -94,7 +95,7 @@ export default function SearchPage() {
                       {filteredProducts.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">
                           <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                          <p>No results found for "{searchQuery}"</p>
+                          <p>No results found for {searchQuery}</p>
                           <p className="text-sm">Try different keywords</p>
                         </div>
                       ) : (
@@ -107,10 +108,12 @@ export default function SearchPage() {
                             >
                               <CardContent className="p-0">
                                 <div className="aspect-square bg-gray-100 relative flex items-center justify-center">
-                                  <img 
+                                  <Image 
                                     src={product?.imageUrl}
                                     alt={product.name}
                                     className="w-full h-full object-cover"
+                                    objectFit="cover"
+                                    layout="fill"
                                     onError={(e) => {
                                       const target = e.target as HTMLImageElement;
                                       target.style.display = 'none';
