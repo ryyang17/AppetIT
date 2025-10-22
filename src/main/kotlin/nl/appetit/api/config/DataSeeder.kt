@@ -115,9 +115,45 @@ class DataSeeder(
             Category(name = "Alcoholic", parentId = beverages.id!!, order = 3)
         ).block()!!
         savedCategories["Alcoholic"] = alcoholic.id!!
+
+
+
+        // Desserts subcategories
+        val cakes = categoryRepository.save(
+            Category(name = "Cakes", parentId = desserts.id!!, order = 1)
+        ).block()!!
+        savedCategories["Cakes"] = cakes.id!!
+
+        val iceCreams = categoryRepository.save(
+            Category(name = "Ice Creams", parentId = desserts.id!!, order = 2)
+        ).block()!!
+        savedCategories["Ice Creams"] = iceCreams.id!!
+
+        val pastries = categoryRepository.save(
+            Category(name = "Pastries", parentId = desserts.id!!, order = 3)
+        ).block()!!
+        savedCategories["Pastries"] = pastries.id!!
+
+        // Salads subcategories
+        val greenSalads = categoryRepository.save(
+            Category(name = "Green Salads", parentId = salads.id!!, order = 1)
+        ).block()!!
+        savedCategories["Green Salads"] = greenSalads.id!!
+
+        val fruitSalads = categoryRepository.save(
+            Category(name = "Fruit Salads", parentId = salads.id!!, order = 2)
+        ).block()!!
+        savedCategories["Fruit Salads"] = fruitSalads.id!!
+
+        val proteinSalads = categoryRepository.save(
+            Category(name = "Protein Salads", parentId = salads.id!!, order = 3)
+        ).block()!!
+        savedCategories["Protein Salads"] = proteinSalads.id!!
         
         logger.info("${savedCategories.size} categories seeded successfully")
         return savedCategories
+
+
     }
 
     private fun seedProducts(categoryMap: Map<String, Long>) {

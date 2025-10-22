@@ -1,2 +1,2 @@
-ALTER TABLE category
-    ADD COLUMN parent_id BIGINT REFERENCES category(category_id) ON DELETE SET NULL;
+-- db/migration/V5__add_parent_id.sql
+ALTER TABLE category ADD COLUMN IF NOT EXISTS parent_id BIGINT;
