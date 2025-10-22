@@ -33,7 +33,7 @@ export function ProductDetailModal({
   const decrementQuantity = () => setQuantity(prev => prev > 1 ? prev - 1 : 1);
 
   return (
-    <div className="fixed top-20 bottom-13 left-0 right-0 z-40 flex items-center justify-center p-4">
+    <div className="fixed top-18 bottom-13 left-0 right-0 z-40 flex items-center justify-center p-4">
       {/* Background overlay */}
       <div className="absolute top-0 left-0 right-0 bottom-0 bg-black/30 backdrop-blur-sm" onClick={onClose}></div>
       
