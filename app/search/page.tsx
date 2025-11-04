@@ -6,9 +6,10 @@ import { BottomNavigation } from "@/components/ui/bottom-navigation";
 import { ProductDetailModal } from "@/components/ui/product-detail-modal";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
-import { Search, Mic, Loader2, ArrowLeft } from "lucide-react";
+import { Search, Mic, Loader2, ArrowLeft, Filter } from "lucide-react";
 import Link from "next/link";
-import { Product } from "@/lib/api";
+import { Product, Category, fetchCategories } from "@/lib/api";
+import { useEffect } from "react";
 
 export default function SearchPage() {
   const { products, loading, error } = useProducts();
@@ -16,6 +17,9 @@ export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [showFilters, setShowFilters] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
@@ -32,11 +36,36 @@ export default function SearchPage() {
     console.log(`Added ${quantity}x ${product.name} to cart`);
   };
 
-  // Filter products based on search query
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Fetch categories on component mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categoryData = await fetchCategories();
+        setCategories(categoryData);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // Get category options for filter
+  const categoryOptions = ["All", ...categories.map(cat => cat.name)];
+
+  // Filter products based on search query and selected category
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (selectedCategory === "All") {
+      return matchesSearch;
+    }
+    
+    const category = categories.find(cat => cat.name === selectedCategory);
+    const matchesCategory = category ? product.categoryId === category.id : false;
+    
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -51,13 +80,22 @@ export default function SearchPage() {
             </Link>
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Search Food</h1>
           </div>
+
+          {/* Filter Button */}
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 mb-3 px-3 py-2 rounded-lg transition-colors"
+            >
+              <Filter className="h-4 w-4" />
+              <span className="text-sm font-medium">Filter</span>
+            </button>
           
           {/* Search Bar */}
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <input
               type="text"
-              placeholder="Search for food, restaurants..."
+              placeholder="Search for food"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -65,6 +103,24 @@ export default function SearchPage() {
             />
             <Mic className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           </div>
+          {/* Category Filter Buttons */}
+          {showFilters && (
+            <div className="flex flex-wrap mt-3 gap-2">
+              {categoryOptions.map((categoryName) => (
+                <button
+                  key={categoryName}
+                  onClick={() => setSelectedCategory(categoryName)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    selectedCategory === categoryName
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {categoryName}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Scrollable Content */}
@@ -85,16 +141,19 @@ export default function SearchPage() {
                   )}
 
                   {/* Search Results */}
-                  {!loading && !error && searchQuery && (
+                  {!loading && !error && (searchQuery || selectedCategory !== "All") && (
                     <div>
                       <h2 className="text-lg font-semibold text-gray-800 mb-3">
-                        Search Results ({filteredProducts.length})
+                        {searchQuery 
+                          ? `Search Results (${filteredProducts.length})` 
+                          : `${selectedCategory} (${filteredProducts.length})`
+                      }
                       </h2>
                       
                       {filteredProducts.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">
                           <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                          <p>No results found for "{searchQuery}"</p>
+                          <p>No results found for "{searchQuery || selectedCategory}"</p>
                           <p className="text-sm">Try different keywords</p>
                         </div>
                       ) : (
@@ -137,7 +196,7 @@ export default function SearchPage() {
                   )}
 
                   {/* Initial State */}
-                  {!loading && !error && !searchQuery && (
+                  {!loading && !error && !searchQuery && selectedCategory === "All" && (
                     <div className="text-center py-16 text-gray-500">
                       <Search className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                       <h3 className="text-lg font-medium mb-2">Search for Food</h3>
