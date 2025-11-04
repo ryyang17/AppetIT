@@ -6,7 +6,7 @@ import { BottomNavigation } from "@/components/ui/bottom-navigation";
 import { ProductDetailModal } from "@/components/ui/product-detail-modal";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
-import { Search, Mic, Loader2, ArrowLeft, Filter } from "lucide-react";
+import { Search, Mic, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Product, Category, fetchCategories } from "@/lib/api";
 import { useEffect } from "react";
@@ -18,7 +18,7 @@ export default function SearchPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [showFilters, setShowFilters] = useState(false);
+
   const [categories, setCategories] = useState<Category[]>([]);
 
   const handleProductClick = (product: Product) => {
@@ -104,15 +104,6 @@ export default function SearchPage() {
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Search Food</h1>
           </div>
 
-          {/* Filter Button */}
-            <button 
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 mb-3 px-3 py-2 rounded-lg transition-colors"
-            >
-              <Filter className="h-4 w-4" />
-              <span className="text-sm font-medium">Filter</span>
-            </button>
-          
           {/* Search Bar */}
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -127,23 +118,21 @@ export default function SearchPage() {
             <Mic className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           </div>
           {/* Category Filter Buttons */}
-          {showFilters && (
-            <div className="flex flex-wrap mt-3 gap-2">
-              {categoryOptions.map((categoryName) => (
-                <button
-                  key={categoryName}
-                  onClick={() => setSelectedCategory(categoryName)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                    selectedCategory === categoryName
-                      ? "bg-green-500 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {categoryName}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="flex flex-wrap mt-3 gap-2">
+            {categoryOptions.map((categoryName) => (
+              <button
+                key={categoryName}
+                onClick={() => setSelectedCategory(categoryName)}
+                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                  selectedCategory === categoryName
+                    ? "bg-green-500 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {categoryName}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Scrollable Content */}
@@ -164,7 +153,7 @@ export default function SearchPage() {
                   )}
 
                   {/* Search Results */}
-                  {!loading && !error && (searchQuery || selectedCategory !== "All") && (
+                  {!loading && !error && filteredProducts.length > 0 && (
                     <div>
                       <h2 className="text-lg font-semibold text-gray-800 mb-3">
                         {searchQuery 
@@ -218,19 +207,20 @@ export default function SearchPage() {
                     </div>
                   )}
 
-                  {/* Initial State */}
-                  {!loading && !error && !searchQuery && selectedCategory === "All" && (
+                  {/* Initial State - No products found */}
+                  {!loading && !error && filteredProducts.length === 0 && (
                     <div className="text-center py-16 text-gray-500">
                       <Search className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                      <h3 className="text-lg font-medium mb-2">Search for Food</h3>
-                      <p>Start typing to find your favorite dishes</p>
+                      <h3 className="text-lg font-medium mb-2">No Results Found</h3>
+                      <p>
+                        {searchQuery 
+                          ? `No products found for "${searchQuery}"` 
+                          : selectedCategory !== "All" 
+                            ? `No products found in "${selectedCategory}"` 
+                            : "No products available"}
+                      </p>
                     </div>
                   )}
-                </div>
-
-                {/* Bottom Navigation - Fixed at bottom */}
-                <div className="absolute bottom-0 left-0 right-0">
-                  <BottomNavigation />
                 </div>
 
                 {/* Product Detail Modal */}
