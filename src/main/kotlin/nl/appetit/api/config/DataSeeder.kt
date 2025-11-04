@@ -1,9 +1,9 @@
 package nl.appetit.api.config
 
-import nl.appetit.api.model.Category
-import nl.appetit.api.model.Product
-import nl.appetit.api.repository.CategoryRepository
-import nl.appetit.api.repository.ProductRepository
+import nl.appetit.api.data.entity.CategoryEntity
+import nl.appetit.api.data.entity.ProductEntity
+import nl.appetit.api.data.repository.CategoryR2dbcRepository
+import nl.appetit.api.data.repository.ProductR2dbcRepository
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
@@ -11,8 +11,8 @@ import java.math.BigDecimal
 
 @Component
 class DataSeeder(
-    private val categoryRepository: CategoryRepository,
-    private val productRepository: ProductRepository
+    private val categoryR2dbcRepository: CategoryR2dbcRepository,
+    private val productRepository: ProductR2dbcRepository
 ) : CommandLineRunner {
 
     private val logger = LoggerFactory.getLogger(DataSeeder::class.java)
@@ -23,7 +23,7 @@ class DataSeeder(
         // Delete all existing data
         logger.info("Deleting all existing data...")
         productRepository.deleteAll().block()
-        categoryRepository.deleteAll().block()
+        categoryR2dbcRepository.deleteAll().block()
         logger.info("Data deleted successfully")
         
         // Seed categories with hierarchy
@@ -41,78 +41,78 @@ class DataSeeder(
         val savedCategories = mutableMapOf<String, Long>()
         
         // Root categories
-        val food = categoryRepository.save(Category(name = "Food", order = 1)).block()!!
+        val food = categoryR2dbcRepository.save(CategoryEntity(name = "Food", order = 1)).block()!!
         savedCategories["Food"] = food.id!!
         
-        val beverages = categoryRepository.save(Category(name = "Beverages", order = 2)).block()!!
+        val beverages = categoryR2dbcRepository.save(CategoryEntity(name = "Beverages", order = 2)).block()!!
         savedCategories["Beverages"] = beverages.id!!
         
         // Food subcategories
-        val appetizers = categoryRepository.save(
-            Category(name = "Appetizers", parentId = food.id!!, order = 1)
+        val appetizers = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Appetizers", parentId = food.id!!, order = 1)
         ).block()!!
         savedCategories["Appetizers"] = appetizers.id!!
         
-        val mainCourses = categoryRepository.save(
-            Category(name = "Main Courses", parentId = food.id!!, order = 2)
+        val mainCourses = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Main Courses", parentId = food.id!!, order = 2)
         ).block()!!
         savedCategories["Main Courses"] = mainCourses.id!!
         
-        val salads = categoryRepository.save(
-            Category(name = "Salads", parentId = food.id!!, order = 3)
+        val salads = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Salads", parentId = food.id!!, order = 3)
         ).block()!!
         savedCategories["Salads"] = salads.id!!
         
-        val desserts = categoryRepository.save(
-            Category(name = "Desserts", parentId = food.id!!, order = 4)
+        val desserts = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Desserts", parentId = food.id!!, order = 4)
         ).block()!!
         savedCategories["Desserts"] = desserts.id!!
         
         // Appetizers sub-subcategories
-        val breadStarters = categoryRepository.save(
-            Category(name = "Bread & Starters", parentId = appetizers.id!!, order = 1)
+        val breadStarters = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Bread & Starters", parentId = appetizers.id!!, order = 1)
         ).block()!!
         savedCategories["Bread & Starters"] = breadStarters.id!!
         
-        val smallPlates = categoryRepository.save(
-            Category(name = "Small Plates", parentId = appetizers.id!!, order = 2)
+        val smallPlates = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Small Plates", parentId = appetizers.id!!, order = 2)
         ).block()!!
         savedCategories["Small Plates"] = smallPlates.id!!
         
         // Main Courses sub-subcategories
-        val meatDishes = categoryRepository.save(
-            Category(name = "Meat Dishes", parentId = mainCourses.id!!, order = 1)
+        val meatDishes = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Meat Dishes", parentId = mainCourses.id!!, order = 1)
         ).block()!!
         savedCategories["Meat Dishes"] = meatDishes.id!!
         
-        val seafood = categoryRepository.save(
-            Category(name = "Seafood", parentId = mainCourses.id!!, order = 2)
+        val seafood = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Seafood", parentId = mainCourses.id!!, order = 2)
         ).block()!!
         savedCategories["Seafood"] = seafood.id!!
         
-        val pasta = categoryRepository.save(
-            Category(name = "Pasta", parentId = mainCourses.id!!, order = 3)
+        val pasta = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Pasta", parentId = mainCourses.id!!, order = 3)
         ).block()!!
         savedCategories["Pasta"] = pasta.id!!
         
-        val vegetarian = categoryRepository.save(
-            Category(name = "Vegetarian", parentId = mainCourses.id!!, order = 4)
+        val vegetarian = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Vegetarian", parentId = mainCourses.id!!, order = 4)
         ).block()!!
         savedCategories["Vegetarian"] = vegetarian.id!!
         
         // Beverages subcategories
-        val hotDrinks = categoryRepository.save(
-            Category(name = "Hot Drinks", parentId = beverages.id!!, order = 1)
+        val hotDrinks = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Hot Drinks", parentId = beverages.id!!, order = 1)
         ).block()!!
         savedCategories["Hot Drinks"] = hotDrinks.id!!
         
-        val coldDrinks = categoryRepository.save(
-            Category(name = "Cold Drinks", parentId = beverages.id!!, order = 2)
+        val coldDrinks = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Cold Drinks", parentId = beverages.id!!, order = 2)
         ).block()!!
         savedCategories["Cold Drinks"] = coldDrinks.id!!
         
-        val alcoholic = categoryRepository.save(
-            Category(name = "Alcoholic", parentId = beverages.id!!, order = 3)
+        val alcoholic = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Alcoholic", parentId = beverages.id!!, order = 3)
         ).block()!!
         savedCategories["Alcoholic"] = alcoholic.id!!
 
@@ -161,7 +161,7 @@ class DataSeeder(
         
         val products = listOf(
             // Bread & Starters
-            Product(
+            ProductEntity(
                 name = "Garlic Bread",
                 price = BigDecimal("4.50"),
                 description = "Fresh baked bread with garlic butter and herbs",
@@ -169,7 +169,7 @@ class DataSeeder(
                 isAvailable = true,
                 categoryId = categoryMap["Bread & Starters"]?.toInt()
             ),
-            Product(
+            ProductEntity(
                 name = "Bruschetta",
                 price = BigDecimal("6.00"),
                 description = "Toasted bread topped with tomatoes, basil, and mozzarella",
@@ -179,7 +179,7 @@ class DataSeeder(
             ),
             
             // Small Plates
-            Product(
+            ProductEntity(
                 name = "Chicken Wings",
                 price = BigDecimal("8.50"),
                 description = "Crispy chicken wings with your choice of sauce",
@@ -189,7 +189,7 @@ class DataSeeder(
             ),
             
             // Meat Dishes
-            Product(
+            ProductEntity(
                 name = "Beef Steak",
                 price = BigDecimal("24.00"),
                 description = "Premium ribeye steak cooked to your preference",
@@ -197,7 +197,7 @@ class DataSeeder(
                 isAvailable = true,
                 categoryId = categoryMap["Meat Dishes"]?.toInt()
             ),
-            Product(
+            ProductEntity(
                 name = "Chicken Parmesan",
                 price = BigDecimal("16.50"),
                 description = "Breaded chicken breast with marinara sauce and mozzarella",
@@ -207,7 +207,7 @@ class DataSeeder(
             ),
             
             // Seafood
-            Product(
+            ProductEntity(
                 name = "Grilled Salmon",
                 price = BigDecimal("18.50"),
                 description = "Fresh Atlantic salmon grilled to perfection with lemon butter",
@@ -215,7 +215,7 @@ class DataSeeder(
                 isAvailable = true,
                 categoryId = categoryMap["Seafood"]?.toInt()
             ),
-            Product(
+            ProductEntity(
                 name = "Shrimp Scampi",
                 price = BigDecimal("17.00"),
                 description = "Tender shrimp in white wine and garlic sauce",
@@ -225,7 +225,7 @@ class DataSeeder(
             ),
             
             // Pasta
-            Product(
+            ProductEntity(
                 name = "Vegetarian Pasta",
                 price = BigDecimal("14.00"),
                 description = "Penne pasta with seasonal vegetables in a light cream sauce",
@@ -233,7 +233,7 @@ class DataSeeder(
                 isAvailable = true,
                 categoryId = categoryMap["Pasta"]?.toInt()
             ),
-            Product(
+            ProductEntity(
                 name = "Spaghetti Bolognese",
                 price = BigDecimal("13.00"),
                 description = "Classic spaghetti with traditional meat sauce",
@@ -243,7 +243,7 @@ class DataSeeder(
             ),
             
             // Vegetarian
-            Product(
+            ProductEntity(
                 name = "Veggie Burger",
                 price = BigDecimal("12.50"),
                 description = "House-made veggie patty with fresh toppings",
@@ -253,7 +253,7 @@ class DataSeeder(
             ),
             
             // Salads
-            Product(
+            ProductEntity(
                 name = "Caesar Salad",
                 price = BigDecimal("9.50"),
                 description = "Fresh romaine lettuce with Caesar dressing and croutons",
@@ -261,7 +261,7 @@ class DataSeeder(
                 isAvailable = true,
                 categoryId = categoryMap["Salads"]?.toInt()
             ),
-            Product(
+            ProductEntity(
                 name = "Greek Salad",
                 price = BigDecimal("10.50"),
                 description = "Mixed greens with feta cheese, olives, and Greek dressing",
@@ -269,7 +269,7 @@ class DataSeeder(
                 isAvailable = true,
                 categoryId = categoryMap["Salads"]?.toInt()
             ),
-            Product(
+            ProductEntity(
                 name = "Caprese Salad",
                 price = BigDecimal("11.00"),
                 description = "Fresh mozzarella, tomatoes, basil with balsamic glaze",
@@ -279,7 +279,7 @@ class DataSeeder(
             ),
             
             // Desserts
-            Product(
+            ProductEntity(
                 name = "Chocolate Cake",
                 price = BigDecimal("6.50"),
                 description = "Rich chocolate cake with chocolate ganache",
@@ -287,7 +287,7 @@ class DataSeeder(
                 isAvailable = true,
                 categoryId = categoryMap["Desserts"]?.toInt()
             ),
-            Product(
+            ProductEntity(
                 name = "Tiramisu",
                 price = BigDecimal("7.00"),
                 description = "Classic Italian dessert with coffee and mascarpone",
@@ -295,7 +295,7 @@ class DataSeeder(
                 isAvailable = true,
                 categoryId = categoryMap["Desserts"]?.toInt()
             ),
-            Product(
+            ProductEntity(
                 name = "Ice Cream Sundae",
                 price = BigDecimal("5.50"),
                 description = "Vanilla ice cream with chocolate sauce and whipped cream",
@@ -305,7 +305,7 @@ class DataSeeder(
             ),
             
             // Hot Drinks
-            Product(
+            ProductEntity(
                 name = "Coffee",
                 price = BigDecimal("2.50"),
                 description = "Freshly brewed espresso-based coffee",
@@ -313,7 +313,7 @@ class DataSeeder(
                 isAvailable = true,
                 categoryId = categoryMap["Hot Drinks"]?.toInt()
             ),
-            Product(
+            ProductEntity(
                 name = "Cappuccino",
                 price = BigDecimal("3.50"),
                 description = "Espresso with steamed milk and foam",
@@ -321,7 +321,7 @@ class DataSeeder(
                 isAvailable = true,
                 categoryId = categoryMap["Hot Drinks"]?.toInt()
             ),
-            Product(
+            ProductEntity(
                 name = "Hot Chocolate",
                 price = BigDecimal("3.00"),
                 description = "Creamy hot chocolate with whipped cream",
@@ -331,7 +331,7 @@ class DataSeeder(
             ),
             
             // Cold Drinks
-            Product(
+            ProductEntity(
                 name = "Fresh Orange Juice",
                 price = BigDecimal("3.50"),
                 description = "Freshly squeezed orange juice",
@@ -339,7 +339,7 @@ class DataSeeder(
                 isAvailable = true,
                 categoryId = categoryMap["Cold Drinks"]?.toInt()
             ),
-            Product(
+            ProductEntity(
                 name = "Sparkling Water",
                 price = BigDecimal("2.00"),
                 description = "Refreshing sparkling water",
@@ -347,7 +347,7 @@ class DataSeeder(
                 isAvailable = true,
                 categoryId = categoryMap["Cold Drinks"]?.toInt()
             ),
-            Product(
+            ProductEntity(
                 name = "Iced Tea",
                 price = BigDecimal("2.75"),
                 description = "Chilled iced tea with fresh lemon",
@@ -357,7 +357,7 @@ class DataSeeder(
             ),
             
             // Alcoholic
-            Product(
+            ProductEntity(
                 name = "House Red Wine",
                 price = BigDecimal("5.50"),
                 description = "Selection of premium red wine by the glass",
@@ -365,7 +365,7 @@ class DataSeeder(
                 isAvailable = true,
                 categoryId = categoryMap["Alcoholic"]?.toInt()
             ),
-            Product(
+            ProductEntity(
                 name = "House White Wine",
                 price = BigDecimal("5.50"),
                 description = "Selection of premium white wine by the glass",
@@ -373,7 +373,7 @@ class DataSeeder(
                 isAvailable = true,
                 categoryId = categoryMap["Alcoholic"]?.toInt()
             ),
-            Product(
+            ProductEntity(
                 name = "Craft Beer",
                 price = BigDecimal("4.50"),
                 description = "Selection of local craft beers",

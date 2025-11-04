@@ -1,0 +1,46 @@
+package nl.appetit.api.logic.service
+
+import nl.appetit.api.data.entity.ProductEntity
+import nl.appetit.api.logic.model.Product
+import nl.appetit.api.logic.repository.ProductRepository
+import org.springframework.stereotype.Service
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+
+@Service
+class ProductService(
+    private val db: ProductRepository
+) {
+    fun findAll(): Flux<Product> =
+        db.findAll()
+
+	fun save(product: Product): Mono<Product> =
+		db.save(product)
+
+    fun deleteById(id: Int): Mono<Void> =
+        db.deleteById(id)
+
+    fun deleteAll(): Mono<Void> =
+        db.deleteAll()
+
+	fun update(id: Int, newProduct: Product): Mono<Product> =
+		db.findById(id)
+			.switchIfEmpty(Mono.error(RuntimeException("Product not found with id: $id")))
+			.flatMap { existing ->
+				val updated = existing.copy(
+					name = newProduct.name,
+					price = newProduct.price,
+					description = newProduct.description,
+					imageUrl = newProduct.imageUrl,
+					isAvailable = newProduct.isAvailable,
+					categoryId = newProduct.categoryId  // Link product to a category
+				)
+				db.save(updated)
+			}
+
+	// Get all products that belong to a specific category
+	fun findAllByCategoryId(categoryId: Int): Flux<Product> =
+		db.findAllByCategoryId(categoryId)
+}
+
+
