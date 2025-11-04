@@ -1,5 +1,5 @@
 # Use a supported JDK
-FROM openjdk:24-jdk-slim
+FROM eclipse-temurin:24
 
 # Set a working directory
 WORKDIR /app
@@ -11,7 +11,7 @@ COPY build/libs/app.jar app.jar
 EXPOSE 8080
 
 # Set JVM options (memory, headroom, etc.)
-ENV JAVA_TOOL_OPTIONS="-Xmx1024m -Xms512m"
+ENV JAVA_TOOL_OPTIONS="-Xmx8192m -Xms512m"
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
