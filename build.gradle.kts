@@ -2,10 +2,10 @@ import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
 import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
-	kotlin("jvm") version "2.2.0"
-	kotlin("plugin.spring") version "2.2.0"
-	id("org.springframework.boot") version "4.0.0-M3"
-	id("io.spring.dependency-management") version "1.1.7"
+	alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.plugin.spring)
+	alias(libs.plugins.springframework.boot)
+    alias(libs.plugins.spring.dependency.management)
 }
 
 group = "nl.appetit"
@@ -24,26 +24,26 @@ repositories {
 
 dependencies {
     // --- Core Spring Boot + Kotlin ---
-	implementation("org.springframework.boot:spring-boot-starter")
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
-	implementation("org.jetbrains.kotlin:kotlin-reflect")
+	implementation(libs.spring.boot.starter)
+    implementation(libs.spring.boot.starter.webflux)
+	implementation(libs.kotlin.reflect)
 	// --- Hot-reload ---
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
+	developmentOnly(libs.spring.boot.devtools)
     // --- Swagger ---
-    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.13")
+    implementation(libs.springdoc.openapi.starter.webflux)
 
     // --- Reactive Database (if you want R2DBC) ---
-    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
-    runtimeOnly("org.postgresql:r2dbc-postgresql")
+    implementation(libs.spring.boot.starter.data.r2dbc)
+    runtimeOnly(libs.r2dbc.postgresql)
 
 	// --- Database Migrations ---
-	implementation("org.flywaydb:flyway-core")
-	implementation("org.flywaydb:flyway-database-postgresql:11.13.1")
-	implementation("org.postgresql:postgresql")
+	implementation(libs.flyway.core)
+	implementation(libs.flyway.database.postgresql)
+	implementation(libs.postgresql)
 
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	testImplementation(libs.spring.boot.starter.webflux.test)
+	testImplementation(libs.kotlin.test.junit5)
+	testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 kotlin {

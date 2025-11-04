@@ -10,7 +10,7 @@ stages:
 # Build stage
 build:
   stage: build
-  image: openjdk:24-jdk-slim
+  image: eclipse-temurin:24
   script:
     - ./gradlew clean bootJar --no-daemon
   artifacts:
@@ -21,7 +21,7 @@ build:
 # Test stage
 test:
   stage: test
-  image: openjdk:24-jdk-slim
+  image: eclipse-temurin:24
   script:
     - ./gradlew test --no-daemon
   artifacts:
