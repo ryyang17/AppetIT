@@ -49,6 +49,28 @@ export default function SearchPage() {
     loadCategories();
   }, []);
 
+// Function to get all child category IDs for a given category
+  const getAllChildCategoryIds = (categoryName: string): number[] => {
+    if (categoryName === "All") return [];
+    
+    const category = categories.find(cat => cat.name === categoryName);
+    if (!category) return [];
+
+    const childIds: number[] = [category.id];
+    
+    // Recursive function to find all descendants
+    const findChildren = (parentId: number) => {
+      const children = categories.filter(cat => cat.parentId === parentId);
+      children.forEach(child => {
+        childIds.push(child.id);
+        findChildren(child.id); // Recursively find grandchildren
+      });
+    };
+    
+    findChildren(category.id);
+    return childIds;
+  };
+
   // Get category options for filter
   const categoryOptions = ["All", ...categories.map(cat => cat.name)];
 
@@ -61,9 +83,10 @@ export default function SearchPage() {
       return matchesSearch;
     }
     
-    const category = categories.find(cat => cat.name === selectedCategory);
-    const matchesCategory = category ? product.categoryId === category.id : false;
-    
+    // Get all child category IDs for the selected category
+    const allowedCategoryIds = getAllChildCategoryIds(selectedCategory);
+    const matchesCategory = product.categoryId !== null && allowedCategoryIds.includes(product.categoryId);
+
     return matchesSearch && matchesCategory;
   });
 
@@ -112,7 +135,7 @@ export default function SearchPage() {
                   onClick={() => setSelectedCategory(categoryName)}
                   className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                     selectedCategory === categoryName
-                      ? "bg-blue-500 text-white"
+                      ? "bg-green-500 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
