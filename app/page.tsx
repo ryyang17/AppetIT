@@ -6,8 +6,9 @@ import { BottomNavigation } from "@/components/ui/bottom-navigation";
 import { ProductDetailModal } from "@/components/ui/product-detail-modal";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
-import { Search, Mic, Loader2 } from "lucide-react";
-import { Product, Category, fetchCategories } from "@/lib/api";
+import { Loader2 } from "lucide-react";
+import { Product, Category, fetchCategories } from "@/lib/interfaces/product";
+import Image from "next/image";
 
 export default function Home() {
   const { products, categories, loading, error } = useProducts();

@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import { fetchOrders, fetchOrderItems, fetchProducts, Order, OrderItem, Product } from '@/lib/api';
+import { fetchOrders } from '@/app/actions/order'
+import { fetchOrderItems } from '@/app/actions/orderItem';
+import { Order } from '@/lib/interfaces/order';
+import { OrderItem } from '@/lib/interfaces/order';
+import { Product } from '@/lib/interfaces/product';
+import { fetchProducts } from '@/app/actions/product';
 
 export function useOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
