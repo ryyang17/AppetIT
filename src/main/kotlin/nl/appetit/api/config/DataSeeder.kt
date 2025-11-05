@@ -119,34 +119,34 @@ class DataSeeder(
 
 
         // Desserts subcategories
-        val cakes = categoryRepository.save(
-            Category(name = "Cakes", parentId = desserts.id!!, order = 1)
+        val cakes = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Cakes", parentId = desserts.id!!, order = 1)
         ).block()!!
         savedCategories["Cakes"] = cakes.id!!
 
-        val iceCreams = categoryRepository.save(
-            Category(name = "Ice Creams", parentId = desserts.id!!, order = 2)
+        val iceCreams = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Ice Creams", parentId = desserts.id!!, order = 2)
         ).block()!!
         savedCategories["Ice Creams"] = iceCreams.id!!
 
-        val pastries = categoryRepository.save(
-            Category(name = "Pastries", parentId = desserts.id!!, order = 3)
+        val pastries = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Pastries", parentId = desserts.id!!, order = 3)
         ).block()!!
         savedCategories["Pastries"] = pastries.id!!
 
         // Salads subcategories
-        val greenSalads = categoryRepository.save(
-            Category(name = "Green Salads", parentId = salads.id!!, order = 1)
+        val greenSalads = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Green Salads", parentId = salads.id!!, order = 1)
         ).block()!!
         savedCategories["Green Salads"] = greenSalads.id!!
 
-        val fruitSalads = categoryRepository.save(
-            Category(name = "Fruit Salads", parentId = salads.id!!, order = 2)
+        val fruitSalads = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Fruit Salads", parentId = salads.id!!, order = 2)
         ).block()!!
         savedCategories["Fruit Salads"] = fruitSalads.id!!
 
-        val proteinSalads = categoryRepository.save(
-            Category(name = "Protein Salads", parentId = salads.id!!, order = 3)
+        val proteinSalads = categoryR2dbcRepository.save(
+            CategoryEntity(name = "Protein Salads", parentId = salads.id!!, order = 3)
         ).block()!!
         savedCategories["Protein Salads"] = proteinSalads.id!!
         
