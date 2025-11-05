@@ -1,27 +1,14 @@
 package nl.appetit.api.presentation.controller
 
-import nl.appetit.api.logic.dto.CategoryDTO
-import nl.appetit.api.data.entity.CategoryEntity
-import nl.appetit.api.logic.model.Category
+import nl.appetit.api.presentation.dto.category.CategoryTreeResponse
 import nl.appetit.api.logic.service.CategoryService
+import nl.appetit.api.presentation.dto.category.CategoryRequest
+import nl.appetit.api.presentation.dto.category.CategoryResponse
+import nl.appetit.api.presentation.dto.category.MoveCategoryRequest
+import nl.appetit.api.presentation.mapper.CategoryMapper
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-
-data class CategoryRequest(
-	val name: String,
-    val parentId: Long? = null
-)
-
-data class MoveCategoryRequest(
-	val categoryId: Long,
-	val newParentId: Long?
-)
-
-fun CategoryRequest.toModel() = Category(
-	name = this.name,
-    parentId = this.parentId
-)
 
 @RestController
 @RequestMapping("/categories")
@@ -34,7 +21,8 @@ class CategoryController(
      * Gebruik dit voor backwards compatibility of eenvoudige lijsten
      */
     @GetMapping
-    fun list(): Flux<Category> = service.getAllCategories()
+    fun list(): Flux<CategoryResponse> = service.getAllCategories()
+        .map(CategoryMapper::toResponse)
 
     /**
      * GET /categories/tree - Retourneert hierarchische boom-structuur
@@ -58,12 +46,14 @@ class CategoryController(
      * ]
      */
     @GetMapping("/tree")
-    fun getTree(): Mono<List<CategoryDTO>> = service.getCategoriesHierarchical()
+    fun getTree(): Mono<List<CategoryTreeResponse>> = service.getCategoriesHierarchical()
+        .map { categories -> categories.map(CategoryMapper::toTreeResponse) }
 
 	@PostMapping
-    fun insert(@RequestBody request: Mono<CategoryRequest>): Mono<Category> {
+    fun insert(@RequestBody request: Mono<CategoryRequest>): Mono<CategoryResponse> {
         return request.flatMap { category ->
-            service.insertCategory(category.toModel())
+            service.insertCategory(CategoryMapper.toModel(category))
+                .map(CategoryMapper::toResponse)
         }
     }
 
@@ -72,19 +62,22 @@ class CategoryController(
         service.deleteCategoryById(id)
 
     @PutMapping("/{id}")
-    fun update(@PathVariable id: Long, @RequestBody request: Mono<CategoryRequest>): Mono<Category> =
+    fun update(@PathVariable id: Long, @RequestBody request: Mono<CategoryRequest>): Mono<CategoryResponse> =
         request.flatMap { category ->
-            service.updateCategory(id, category.toModel())
+            service.updateCategory(id, CategoryMapper.toModel(category))
+                .map(CategoryMapper::toResponse)
         }
 
     @PutMapping("/move")
-    fun moveCategory(@RequestBody request: Mono<MoveCategoryRequest>): Mono<Category> {
+    fun moveCategory(@RequestBody request: Mono<MoveCategoryRequest>): Mono<CategoryResponse> {
         return request.flatMap { moveReq ->
             service.moveCategory(moveReq.categoryId, moveReq.newParentId)
+                .map(CategoryMapper::toResponse)
         }
     }
 
     @GetMapping("/subcategory/{parentId}")
-    fun getSubcategories(@PathVariable parentId: Long): Flux<Category> =
+    fun getSubcategories(@PathVariable parentId: Long): Flux<CategoryResponse> =
         service.getSubcategoriesByParentId(parentId)
+            .map(CategoryMapper::toResponse)
 }
