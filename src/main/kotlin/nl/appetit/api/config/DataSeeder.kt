@@ -1,19 +1,24 @@
 package nl.appetit.api.config
 
+import nl.appetit.api.config.AllergenSvgIcons
 import nl.appetit.api.data.entity.CategoryEntity
 import nl.appetit.api.data.entity.ProductEntity
+import nl.appetit.api.data.entity.TagEntity
 import nl.appetit.api.data.repository.CategoryR2dbcRepository
 import nl.appetit.api.data.repository.ProductR2dbcRepository
+import nl.appetit.api.data.repository.TagR2dbcRepository
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
 import org.springframework.context.annotation.Profile
 import java.math.BigDecimal
+
 @Profile("!prod")
 @Component
 class DataSeeder(
     private val categoryR2dbcRepository: CategoryR2dbcRepository,
-    private val productR2dbcRepository: ProductR2dbcRepository
+    private val productR2dbcRepository: ProductR2dbcRepository,
+    private val tagR2dbcRepository: TagR2dbcRepository
 ) : CommandLineRunner {
 
     private val logger = LoggerFactory.getLogger(DataSeeder::class.java)
@@ -25,6 +30,7 @@ class DataSeeder(
         logger.info("Deleting all existing data...")
         productR2dbcRepository.deleteAll().block()
         categoryR2dbcRepository.deleteAll().block()
+        tagR2dbcRepository.deleteAll().block()
         logger.info("Data deleted successfully")
         
         // Seed categories with hierarchy
@@ -32,6 +38,9 @@ class DataSeeder(
         
         // Seed products with category assignments
         seedProducts(categoryMap)
+        
+        // Seed allergen tags (EU 14 allergens)
+        seedAllergens()
         
         logger.info("Data seeding completed!")
     }
@@ -386,5 +395,72 @@ class DataSeeder(
         
         productR2dbcRepository.saveAll(products).collectList().block()
         logger.info("${products.size} products seeded successfully")
+    }
+
+    private fun seedAllergens() {
+        logger.info("Seeding EU 14 allergen tags...")
+        
+        // EU 14 Food Allergens with SVG icons from AllergenSvgIcons
+        val allergens = listOf(
+            TagEntity(
+                name = "Cereals containing gluten",
+                svgIcon = AllergenSvgIcons.GLUTEN
+            ),
+            TagEntity(
+                name = "Crustaceans",
+                svgIcon = AllergenSvgIcons.CRUSTACEANS
+            ),
+            TagEntity(
+                name = "Eggs",
+                svgIcon = AllergenSvgIcons.EGGS
+            ),
+            TagEntity(
+                name = "Fish",
+                svgIcon = AllergenSvgIcons.FISH
+            ),
+            TagEntity(
+                name = "Peanuts",
+                svgIcon = AllergenSvgIcons.PEANUTS
+            ),
+            TagEntity(
+                name = "Soybeans",
+                svgIcon = AllergenSvgIcons.SOYBEANS
+            ),
+            TagEntity(
+                name = "Milk",
+                svgIcon = AllergenSvgIcons.MILK
+            ),
+            TagEntity(
+                name = "Nuts",
+                svgIcon = AllergenSvgIcons.NUTS
+            ),
+            TagEntity(
+                name = "Celery",
+                svgIcon = AllergenSvgIcons.CELERY
+            ),
+            TagEntity(
+                name = "Mustard",
+                svgIcon = AllergenSvgIcons.MUSTARD
+            ),
+            TagEntity(
+                name = "Sesame seeds",
+                svgIcon = AllergenSvgIcons.SESAME
+            ),
+            TagEntity(
+                name = "Sulphur dioxide and sulphites",
+                svgIcon = AllergenSvgIcons.SULPHITES
+            ),
+            TagEntity(
+                name = "Lupin",
+                svgIcon = AllergenSvgIcons.LUPIN
+            ),
+            TagEntity(
+                name = "Molluscs",
+                svgIcon = AllergenSvgIcons.MOLLUSCS
+            )
+        )
+        
+        tagR2dbcRepository.saveAll(allergens).collectList().block()
+        logger.info("${allergens.size} allergen tags seeded successfully")
     }
 }
