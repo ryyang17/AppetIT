@@ -7,7 +7,10 @@ import { ProductDetailModal } from "@/components/ui/product-detail-modal";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import { Loader2 } from "lucide-react";
-import { Product, Category, fetchCategories } from "@/lib/interfaces/product";
+import { Product } from "@/lib/interfaces/product";
+import { Category } from "@/lib/interfaces/category";
+import { fetchCategories } from "@/app/actions/category";
+import { Search } from "lucide-react";
 import Image from "next/image";
 
 export default function Home() {
