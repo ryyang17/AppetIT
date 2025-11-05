@@ -8,11 +8,11 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
-
+@profile("!prod")
 @Component
 class DataSeeder(
     private val categoryR2dbcRepository: CategoryR2dbcRepository,
-    private val productRepository: ProductR2dbcRepository
+    private val productR2dbcRepository: ProductR2dbcRepository
 ) : CommandLineRunner {
 
     private val logger = LoggerFactory.getLogger(DataSeeder::class.java)
@@ -383,7 +383,7 @@ class DataSeeder(
             )
         )
         
-        productRepository.saveAll(products).collectList().block()
+        productR2dbcRepository.saveAll(products).collectList().block()
         logger.info("${products.size} products seeded successfully")
     }
 }
