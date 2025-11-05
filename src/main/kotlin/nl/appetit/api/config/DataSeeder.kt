@@ -9,7 +9,7 @@ import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
 import org.springframework.context.annotation.Profile
 import java.math.BigDecimal
-@profile("!prod")
+@Profile("!prod")
 @Component
 class DataSeeder(
     private val categoryR2dbcRepository: CategoryR2dbcRepository,
