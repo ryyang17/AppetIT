@@ -1,9 +1,8 @@
 package nl.appetit.api.logic.service
 
-import nl.appetit.api.logic.dto.CategoryDTO
-import nl.appetit.api.logic.dto.toDTO
-import nl.appetit.api.data.entity.CategoryEntity
 import nl.appetit.api.logic.model.Category
+import nl.appetit.api.logic.model.TreeCategory
+import nl.appetit.api.logic.model.toTreeCategory
 import nl.appetit.api.logic.repository.CategoryRepository
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
@@ -21,7 +20,7 @@ class CategoryService(
      * Haalt alle categorieën op en bouwt een hierarchische boom-structuur
      * Alleen root categorieën (parentId = null) worden geretourneerd met hun children
      */
-    fun getCategoriesHierarchical(): Mono<List<CategoryDTO>> {
+    fun getCategoriesHierarchical(): Mono<List<TreeCategory>> {
         return db.findAll()
             .collectList()
             .map { categories ->
@@ -33,19 +32,16 @@ class CategoryService(
      * Bouwt een hierarchische boom van categorieën
      * Efficiënt algoritme: O(n) tijd complexiteit
      */
-    private fun buildCategoryTree(categories: List<Category>): List<CategoryDTO> {
-        // Maak een map voor snelle lookup van categorieën per ID
-        val categoryMap = categories.associateBy { it.id!! }
-        
+    private fun buildCategoryTree(categories: List<Category>): List<TreeCategory> {
         // Groepeer categorieën per parentId voor efficiënte children lookup
         val childrenMap = categories
             .filter { it.parentId != null }
             .groupBy { it.parentId }
         
         // Recursieve functie om children te bouwen
-        fun buildChildren(parentId: Long): List<CategoryDTO> {
+        fun buildChildren(parentId: Long): List<TreeCategory> {
             return childrenMap[parentId]?.map { child ->
-                child.toDTO(
+                child.toTreeCategory(
                     children = child.id?.let { buildChildren(it) } ?: emptyList()
                 )
             } ?: emptyList()
@@ -55,7 +51,7 @@ class CategoryService(
         return categories
             .filter { it.parentId == null }
             .map { root ->
-                root.toDTO(
+                root.toTreeCategory(
                     children = root.id?.let { buildChildren(it) } ?: emptyList()
                 )
             }
