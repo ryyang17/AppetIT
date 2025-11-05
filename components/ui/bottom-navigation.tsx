@@ -35,12 +35,6 @@ export function BottomNavigation({
       active: pathname === "/",
     },
     {
-      icon: <Search className="h-5 w-5" />,
-      label: "Search",
-      href: "/search",
-      active: pathname === "/search",
-    },
-    {
       icon: <ShoppingCart className="h-5 w-5" />,
       label: "Cart",
       href: "/cart",
