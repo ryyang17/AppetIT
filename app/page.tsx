@@ -211,7 +211,7 @@ export default function Home() {
                   {filteredProducts.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>No products found for "{searchQuery || selectedCategory}"</p>
+                      <p>No products found for &quot;{searchQuery || selectedCategory}&quot;</p>
                       <p className="text-sm">Try different keywords</p>
                     </div>
                   ) : (
@@ -224,7 +224,7 @@ export default function Home() {
                         >
                           <CardContent className="p-0">
                             <div className="aspect-square bg-gray-100 relative flex items-center justify-center">
-                              <img 
+                              <Image 
                                 src={product?.imageUrl}
                                 alt={product.name}
                                 className="w-full h-full object-cover"
@@ -279,10 +279,12 @@ export default function Home() {
                             >
                               <CardContent className="p-0">
                                 <div className="aspect-square bg-gray-100 relative flex items-center justify-center">
-                                  <img 
+                                  <Image
                                     src={product?.imageUrl}
                                     alt={product.name}
                                     className="w-full h-full object-cover"
+                                    objectFit="cover"
+                                    fill
                                     onError={(e) => {
                                       const target = e.target as HTMLImageElement;
                                       target.style.display = 'none';
