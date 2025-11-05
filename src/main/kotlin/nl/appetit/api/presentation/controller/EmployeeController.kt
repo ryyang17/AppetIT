@@ -1,10 +1,10 @@
 package nl.appetit.api.presentation.controller
 
 import nl.appetit.api.logic.service.EmployeeService
-import nl.appetit.api.presentation.EmployeeRequest
-import nl.appetit.api.presentation.toModel
-import nl.appetit.api.presentation.EmployeeResponse
-import nl.appetit.api.presentation.toResponse
+import nl.appetit.api.presentation.dto.employee.EmployeeRequest
+import nl.appetit.api.presentation.dto.employee.EmployeeResponse
+import nl.appetit.api.presentation.mapper.EmployeeMapper.toModel
+import nl.appetit.api.presentation.mapper.EmployeeMapper.toResponse
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
