@@ -1,9 +1,10 @@
 package nl.appetit.api.presentation.controller
 
-import nl.appetit.api.logic.model.Employee
 import nl.appetit.api.logic.service.EmployeeService
 import nl.appetit.api.presentation.EmployeeRequest
 import nl.appetit.api.presentation.toModel
+import nl.appetit.api.presentation.EmployeeResponse
+import nl.appetit.api.presentation.toResponse
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -15,18 +16,18 @@ class EmployeeController(
 ) {
 
     @GetMapping
-    fun list(): Flux<Employee> = service.findAll()
+    fun list(): Flux<EmployeeResponse> = service.findAll().map { it.toResponse() }
 
     @GetMapping("/active")
-    fun listActive(): Flux<Employee> = service.findByActiveTrue()
+    fun listActive(): Flux<EmployeeResponse> = service.findByActiveTrue().map { it.toResponse() }
 
     @PostMapping
-    fun insert(@RequestBody request: EmployeeRequest): Mono<Employee> =
-        service.save(request.toModel())
+    fun insert(@RequestBody request: EmployeeRequest): Mono<EmployeeResponse> =
+        service.save(request.toModel()).map { it.toResponse() }
 
     @PutMapping("/{id}")
-    fun update(@PathVariable id: Int, @RequestBody request: EmployeeRequest): Mono<Employee> =
-        service.update(id, request.toModel())
+    fun update(@PathVariable id: Int, @RequestBody request: EmployeeRequest): Mono<EmployeeResponse> =
+        service.update(id, request.toModel()).map { it.toResponse() }
 
     @DeleteMapping("/{id}")
     fun delete(@PathVariable id: Int): Mono<Void> =
