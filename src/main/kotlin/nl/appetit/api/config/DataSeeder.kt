@@ -7,8 +7,9 @@ import nl.appetit.api.data.repository.ProductR2dbcRepository
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
+import org.springframework.context.annotation.Profile
 import java.math.BigDecimal
-@profile("!prod")
+@Profile("!prod")
 @Component
 class DataSeeder(
     private val categoryR2dbcRepository: CategoryR2dbcRepository,
@@ -22,7 +23,7 @@ class DataSeeder(
         
         // Delete all existing data
         logger.info("Deleting all existing data...")
-        productRepository.deleteAll().block()
+        productR2dbcRepository.deleteAll().block()
         categoryR2dbcRepository.deleteAll().block()
         logger.info("Data deleted successfully")
         
