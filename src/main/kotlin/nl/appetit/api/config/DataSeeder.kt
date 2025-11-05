@@ -7,6 +7,7 @@ import nl.appetit.api.data.entity.TagEntity
 import nl.appetit.api.data.repository.CategoryR2dbcRepository
 import nl.appetit.api.data.repository.ProductR2dbcRepository
 import nl.appetit.api.data.repository.TagR2dbcRepository
+import nl.appetit.api.data.repository.ProductTagR2dbcRepository
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
@@ -18,7 +19,8 @@ import java.math.BigDecimal
 class DataSeeder(
     private val categoryR2dbcRepository: CategoryR2dbcRepository,
     private val productR2dbcRepository: ProductR2dbcRepository,
-    private val tagR2dbcRepository: TagR2dbcRepository
+    private val tagR2dbcRepository: TagR2dbcRepository,
+    private val productTagR2dbcRepository: ProductTagR2dbcRepository
 ) : CommandLineRunner {
 
     private val logger = LoggerFactory.getLogger(DataSeeder::class.java)
@@ -36,11 +38,14 @@ class DataSeeder(
         // Seed categories with hierarchy
         val categoryMap = seedCategories()
         
-        // Seed products with category assignments
-        seedProducts(categoryMap)
+        // Seed allergen tags (EU 14 allergens) - must be done before products to get tag IDs
+        val tagMap = seedAllergens()
         
-        // Seed allergen tags (EU 14 allergens)
-        seedAllergens()
+        // Seed products with category assignments
+        val productMap = seedProducts(categoryMap)
+        
+        // Associate allergens with products
+        seedProductAllergens(productMap, tagMap)
         
         logger.info("Data seeding completed!")
     }
@@ -166,7 +171,7 @@ class DataSeeder(
 
     }
 
-    private fun seedProducts(categoryMap: Map<String, Long>) {
+    private fun seedProducts(categoryMap: Map<String, Long>): Map<String, Int> {
         logger.info("Seeding products...")
         
         val products = listOf(
@@ -393,11 +398,15 @@ class DataSeeder(
             )
         )
         
-        productR2dbcRepository.saveAll(products).collectList().block()
-        logger.info("${products.size} products seeded successfully")
+        val savedProducts = productR2dbcRepository.saveAll(products).collectList().block()!!
+        logger.info("${savedProducts.size} products seeded successfully")
+        
+        // Create a map of product names to IDs for allergen assignment
+        val productMap = savedProducts.associate { it.name to (it.id ?: 0) }
+        return productMap
     }
 
-    private fun seedAllergens() {
+    private fun seedAllergens(): Map<String, Int> {
         logger.info("Seeding EU 14 allergen tags...")
         
         // EU 14 Food Allergens with SVG icons from AllergenSvgIcons
@@ -460,7 +469,87 @@ class DataSeeder(
             )
         )
         
-        tagR2dbcRepository.saveAll(allergens).collectList().block()
-        logger.info("${allergens.size} allergen tags seeded successfully")
+        val savedTags = tagR2dbcRepository.saveAll(allergens).collectList().block()!!
+        logger.info("${savedTags.size} allergen tags seeded successfully")
+        
+        // Create a map of allergen names to IDs for product association
+        val tagMap = savedTags.associate { it.name to (it.id ?: 0) }
+        return tagMap
+    }
+
+    private fun seedProductAllergens(productMap: Map<String, Int>, tagMap: Map<String, Int>) {
+        logger.info("Associating allergens with products...")
+        
+        // Define allergen associations based on product ingredients
+        val productAllergenMap = mapOf(
+            // Bread & Starters
+            "Garlic Bread" to listOf("Cereals containing gluten", "Milk"),
+            "Bruschetta" to listOf("Cereals containing gluten", "Milk"),
+            
+            // Small Plates
+            "Chicken Wings" to listOf(), // Typically no common allergens, but sauces may vary
+            
+            // Meat Dishes
+            "Beef Steak" to listOf(), // Typically no common allergens
+            "Chicken Parmesan" to listOf("Cereals containing gluten", "Eggs", "Milk"),
+            
+            // Seafood
+            "Grilled Salmon" to listOf("Fish"),
+            "Shrimp Scampi" to listOf("Crustaceans", "Milk", "Sulphur dioxide and sulphites"),
+            
+            // Pasta
+            "Vegetarian Pasta" to listOf("Cereals containing gluten", "Milk"),
+            "Spaghetti Bolognese" to listOf("Cereals containing gluten", "Milk"),
+            
+            // Vegetarian
+            "Veggie Burger" to listOf("Soybeans", "Cereals containing gluten", "Eggs"), // Common veggie burger ingredients
+            
+            // Salads
+            "Caesar Salad" to listOf("Eggs", "Fish", "Milk", "Cereals containing gluten"), // Caesar dressing contains anchovies, eggs, cheese; croutons contain gluten
+            "Greek Salad" to listOf("Milk"), // Feta cheese
+            "Caprese Salad" to listOf("Milk"), // Mozzarella
+            
+            // Desserts
+            "Chocolate Cake" to listOf("Cereals containing gluten", "Eggs", "Milk"),
+            "Tiramisu" to listOf("Eggs", "Milk", "Cereals containing gluten"),
+            "Ice Cream Sundae" to listOf("Milk"),
+            
+            // Hot Drinks
+            "Coffee" to listOf(), // No common allergens
+            "Cappuccino" to listOf("Milk"),
+            "Hot Chocolate" to listOf("Milk"),
+            
+            // Cold Drinks
+            "Fresh Orange Juice" to listOf(), // No common allergens
+            "Sparkling Water" to listOf(), // No common allergens
+            "Iced Tea" to listOf(), // No common allergens
+            
+            // Alcoholic
+            "House Red Wine" to listOf("Sulphur dioxide and sulphites"),
+            "House White Wine" to listOf("Sulphur dioxide and sulphites"),
+            "Craft Beer" to listOf("Cereals containing gluten")
+        )
+        
+        var associationsCount = 0
+        productAllergenMap.forEach { (productName, allergenNames) ->
+            val productId = productMap[productName]
+            if (productId != null && productId > 0) {
+                allergenNames.forEach { allergenName ->
+                    val tagId = tagMap[allergenName]
+                    if (tagId != null && tagId > 0) {
+                        try {
+                            productTagR2dbcRepository.insert(productId, tagId).block()
+                            associationsCount++
+                        } catch (e: Exception) {
+                            logger.warn("Failed to associate allergen '$allergenName' with product '$productName': ${e.message}")
+                        }
+                    }
+                }
+            } else {
+                logger.warn("Product '$productName' not found in product map")
+            }
+        }
+        
+        logger.info("$associationsCount allergen-product associations created successfully")
     }
 }
