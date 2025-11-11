@@ -18,8 +18,9 @@ class EmployeeController(
     @GetMapping
     fun list(): Flux<EmployeeResponse> = service.findAll().map { it.toResponse() }
 
-    @GetMapping("/active")
-    fun listActive(): Flux<EmployeeResponse> = service.findByActiveTrue().map { it.toResponse() }
+    @GetMapping("/{id}")
+    fun getById(@PathVariable id: Int): Mono<EmployeeResponse> =
+        service.findById(id).map { it.toResponse() }
 
     @PostMapping
     fun insert(@RequestBody request: EmployeeRequest): Mono<EmployeeResponse> =
