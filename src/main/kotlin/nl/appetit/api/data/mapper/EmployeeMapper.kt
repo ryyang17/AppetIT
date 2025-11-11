@@ -24,7 +24,7 @@ object EmployeeMapper {
     fun toEntity(source: Employee) = EmployeeEntity(
         id = source.id,
         personnelNumber = source.personnelNumber,
-        restaurantId = source.restaurantId,
+        restaurantId = null, // TODO: Implement restaurant ID functionality
         firstName = source.firstName,
         lastName = source.lastName,
         role = source.role.name,

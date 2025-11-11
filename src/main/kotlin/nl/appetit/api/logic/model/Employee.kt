@@ -4,8 +4,8 @@ import java.time.Instant
 
 data class Employee(
     val id: Int? = null,
-    val personnelNumber: String? = null,
-    val restaurantId: Int? = null,
+    val personnelNumber: Int? = null,
+    val restaurantId: Int? = null, // TODO: Implement restaurant ID functionality
     val firstName: String,
     val lastName: String,
     val role: EmployeeRole,

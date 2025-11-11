@@ -1,15 +1,14 @@
 package nl.appetit.api.logic.service
 
 import nl.appetit.api.logic.model.Employee
-import nl.appetit.api.logic.model.EmployeeRole
 import nl.appetit.api.logic.repository.EmployeeRepository
 import nl.appetit.api.logic.repository.RestaurantRepository
 import nl.appetit.api.logic.exception.BadRequestException
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.time.Instant
 
-@Suppress("unused")
 @Service
 class EmployeeService(
     private val db: EmployeeRepository,
@@ -18,17 +17,26 @@ class EmployeeService(
     fun findAll(): Flux<Employee> =
         db.findAll()
 
-    @Suppress("unused")
     fun findById(id: Int): Mono<Employee> =
         db.findById(id)
 
     fun save(employee: Employee): Mono<Employee> =
         if (employee.restaurantId == null || employee.restaurantId <= 0) {
-            db.save(employee)
+            val now = Instant.now()
+            val withTimestamps = employee.copy(
+                createdAt = employee.createdAt ?: now,
+                updatedAt = now
+            )
+            db.save(withTimestamps)
         } else {
             restaurantRepository.existsById(employee.restaurantId)
                 .flatMap { exists ->
-                    if (exists == true) db.save(employee)
+                    val now = Instant.now()
+                    val withTimestamps = employee.copy(
+                        createdAt = employee.createdAt ?: now,
+                        updatedAt = now
+                    )
+                    if (exists == true) db.save(withTimestamps)
                     else Mono.error(BadRequestException("Restaurant with id ${employee.restaurantId} does not exist"))
                 }
         }
@@ -49,7 +57,9 @@ class EmployeeService(
                     role = newEmployee.role,
                     active = newEmployee.active,
                     personnelNumber = newEmployee.personnelNumber,
-                    restaurantId = newEmployee.restaurantId
+                    restaurantId = newEmployee.restaurantId,
+                    createdAt = existing.createdAt,
+                    updatedAt = Instant.now()
                 )
                 if (updated.restaurantId == null) {
                     db.save(updated)
@@ -60,48 +70,5 @@ class EmployeeService(
                             else Mono.error(BadRequestException("Restaurant with id ${updated.restaurantId} does not exist"))
                         }
                 }
-            }
-
-    // Get all active employees
-    fun findByActiveTrue(): Flux<Employee> =
-        db.findByActiveTrue()
-
-    // Get employee by personnel number
-    @Suppress("unused")
-    fun findByPersonnelNumber(personnelNumber: String): Mono<Employee> =
-        db.findByPersonnelNumber(personnelNumber)
-
-    // Get employees by role
-    @Suppress("unused")
-    fun findByRole(role: EmployeeRole): Flux<Employee> =
-        db.findByRole(role)
-
-    // Get employees by restaurant
-    @Suppress("unused")
-    fun findByRestaurantId(restaurantId: Int): Flux<Employee> =
-        db.findByRestaurantId(restaurantId)
-
-    // Get active employees by restaurant
-    @Suppress("unused")
-    fun findByRestaurantIdAndActiveTrue(restaurantId: Int): Flux<Employee> =
-        db.findByRestaurantIdAndActiveTrue(restaurantId)
-
-    // Business operations for employee management
-    @Suppress("unused")
-    fun deactivateEmployee(id: Int): Mono<Employee> =
-        db.findById(id)
-            .switchIfEmpty(Mono.error(RuntimeException("Employee not found with id: $id")))
-            .flatMap { employee ->
-                val deactivated = employee.copy(active = false)
-                db.save(deactivated)
-            }
-
-    @Suppress("unused")
-    fun activateEmployee(id: Int): Mono<Employee> =
-        db.findById(id)
-            .switchIfEmpty(Mono.error(RuntimeException("Employee not found with id: $id")))
-            .flatMap { employee ->
-                val activated = employee.copy(active = true)
-                db.save(activated)
             }
 }

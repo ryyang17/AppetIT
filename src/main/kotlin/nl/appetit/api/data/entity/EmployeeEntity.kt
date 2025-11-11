@@ -13,7 +13,7 @@ data class EmployeeEntity(
     val id: Int? = null,
 
     @Column("personnel_number")
-    val personnelNumber: String? = null,
+    val personnelNumber: Int? = null,
 
     @Column("restaurant_id")
     val restaurantId: Int? = null,
