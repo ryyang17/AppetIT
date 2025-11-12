@@ -77,6 +77,9 @@ tasks.named<BootJar>("bootJar") {
 tasks.withType<Test> {
 	useJUnitPlatform()
 	finalizedBy(tasks.jacocoTestReport, tasks.jacocoTestCoverageVerification)
+	jvmArgs = listOf(
+		"-javaagent:${classpath.find { it.name.contains("mockito-core") }?.absolutePath}"
+	)
 }
 
 tasks.withType<org.springframework.boot.gradle.tasks.run.BootRun>().configureEach {
