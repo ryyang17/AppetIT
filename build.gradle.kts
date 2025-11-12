@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.plugin.spring)
 	alias(libs.plugins.springframework.boot)
     alias(libs.plugins.spring.dependency.management)
+	id("jacoco")
 }
 
 group = "nl.appetit"
@@ -75,6 +76,7 @@ tasks.named<BootJar>("bootJar") {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	finalizedBy(tasks.jacocoTestReport, tasks.jacocoTestCoverageVerification)
 }
 
 tasks.withType<org.springframework.boot.gradle.tasks.run.BootRun>().configureEach {

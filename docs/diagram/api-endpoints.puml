@@ -1,0 +1,152 @@
+@startuml API Endpoints Overview
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+skinparam noteBackgroundColor #FFFACD
+
+package "Products API" #LightBlue {
+  [ProductController] as ProductCtrl
+  
+  note right of ProductCtrl
+    **Base Path**: /products
+    
+    **GET /products?excludeTagIds=1,2,3**
+    • Purpose: Get products with tag exclusion filter
+    • Query Param: excludeTagIds (comma-separated tag IDs)
+    • Logic: Returns products that do NOT have any of the specified tags
+    • Response: ProductResponse[] with tags included
+    • Use Case: Filter menu for allergies/dietary restrictions
+    
+    **GET /products/category/{categoryId}**
+    • Purpose: Get products by category
+    • Response: ProductResponse[] with tags included
+    • Use Case: Display products in a specific category
+    
+    **POST /products**
+    • Purpose: Create new product
+    • Body: ProductRequest
+    • Response: ProductResponse with tags (empty initially)
+    
+    **PUT /products/{id}**
+    • Purpose: Update existing product
+    • Body: ProductRequest
+    • Response: ProductResponse with tags
+    
+    **DELETE /products/{id}**
+    • Purpose: Delete product
+    • Effect: Cascades to product_tag relationships
+  end note
+}
+
+package "Product Tags API" #LightGreen {
+  [ProductTagController] as ProductTagCtrl
+  
+  note right of ProductTagCtrl
+    **Base Path**: /product-tags
+    
+    **GET /product-tags/product/{productId}/tags**
+    • Purpose: Get all tags for a specific product
+    • Response: TagResponse[]
+    • Use Case: Display tags on product card
+    
+    **POST /product-tags/product/{productId}/tag/{tagId}**
+    • Purpose: Assign a tag to a product
+    • Creates: product_tag relationship
+    • Idempotent: No error if relationship exists
+    
+    **DELETE /product-tags/product/{productId}/tag/{tagId}**
+    • Purpose: Remove tag from product
+    • Deletes: product_tag relationship
+    • Safe: No error if relationship doesn't exist
+  end note
+}
+
+package "Tags API" #LightYellow {
+  [TagController] as TagCtrl
+  
+  note right of TagCtrl
+    **Base Path**: /tags
+    
+    **GET /tags**
+    • Purpose: Get all available tags
+    • Response: TagResponse[]
+    • Use Case: Populate tag filter bar
+    
+    **GET /tags/{id}**
+    • Purpose: Get single tag by ID
+    • Response: TagResponse
+    
+    **POST /tags**
+    • Purpose: Create new tag
+    • Body: TagRequest (name, svgIcon)
+    • Response: TagResponse
+    
+    **PUT /tags/{id}**
+    • Purpose: Update tag
+    • Body: TagRequest
+    • Response: TagResponse
+    
+    **DELETE /tags/{id}**
+    • Purpose: Delete tag
+    • Effect: Cascades to product_tag relationships
+  end note
+}
+
+' Show relationships and data flow
+ProductCtrl ..> ProductTagCtrl : "manages relationships\nvia separate controller"
+ProductCtrl ..> TagCtrl : "fetches tag data\nfor product enrichment"
+
+note bottom of ProductCtrl
+  **Key Feature: Tag Exclusion Filtering**
+  
+  Example Request:
+  GET /products?excludeTagIds=1,2,3
+  
+  What Happens:
+  1. Parse tag IDs: [1, 2, 3]
+  2. Query database: Find products WITHOUT these tags
+  3. SQL: WHERE product_id NOT IN (
+       SELECT product_id FROM product_tag
+       WHERE tag_id IN (1, 2, 3)
+     )
+  4. Enrich each product with its tags
+  5. Return filtered products with tags included
+  
+  Result: User sees only products safe for their dietary needs
+end note
+
+note bottom of ProductTagCtrl
+  **Separation of Concerns**
+  
+  Product-tag relationships are managed
+  separately from product CRUD operations.
+  This provides:
+  • Better code organization
+  • Clearer Swagger documentation
+  • Easier maintenance
+end note
+
+note bottom
+  **Swagger Documentation**
+  All endpoints documented with:
+  • @Operation: Summary and description
+  • @Parameter: Path/query param details
+  • @Tag: Groups endpoints in Swagger UI
+  
+  Access: http://localhost:8080/swagger-ui
+  
+  **Response Format**
+  All product endpoints include tags array:
+  {
+    "id": 1,
+    "name": "Pizza",
+    "tags": [
+      {"id": 1, "name": "Gluten"},
+      {"id": 2, "name": "Dairy"}
+    ]
+  }
+end note
+
+@enduml
+

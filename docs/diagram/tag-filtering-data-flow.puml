@@ -1,0 +1,68 @@
+@startuml Tag Filtering Data Flow
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+
+actor User
+participant "Frontend" as Frontend
+participant "ProductController" as Controller
+participant "ProductService" as Service
+participant "ProductTagRepository" as Repo
+database "PostgreSQL" as DB
+
+== Initial Load ==
+User -> Frontend: Open menu page
+Frontend -> Controller: GET /tags
+Controller -> Frontend: [TagResponse[]]
+Frontend -> Frontend: Display tag filter bar
+
+== User Selects Tags to Exclude ==
+User -> Frontend: Click tag (e.g., "Gluten")
+Frontend -> Frontend: Add tag ID to exclusion list\n[1, 2, 3]
+
+== Fetch Filtered Products ==
+Frontend -> Controller: GET /products?excludeTagIds=1,2,3
+activate Controller
+
+Controller -> Controller: Parse excludeTagIds\n"1,2,3" -> [1, 2, 3]
+
+Controller -> Service: findAllExcludingTagIds([1, 2, 3])
+activate Service
+
+Service -> Repo: findProductsExcludingTagIds([1, 2, 3])
+activate Repo
+
+Repo -> DB: SQL Query:\nSELECT * FROM product\nWHERE product_id NOT IN (\n  SELECT product_id\n  FROM product_tag\n  WHERE tag_id IN (1, 2, 3)\n)
+activate DB
+DB -> Repo: ProductEntity[]
+deactivate DB
+
+Repo -> Service: Flux<Product>
+deactivate Repo
+
+Service -> Controller: Flux<Product>
+deactivate Service
+
+== Enrich Products with Tags ==
+loop For each product
+  Controller -> Controller: tagService.getTagsByProductId(productId)
+  Controller -> Controller: Collect tags for product
+end
+
+Controller -> Controller: Map to ProductResponse\nwith tags included
+
+Controller -> Frontend: ProductResponse[]\n(each with tags array)
+deactivate Controller
+
+Frontend -> Frontend: Filter products by selected tags\n(already done server-side)
+Frontend -> User: Display filtered products
+
+note over Frontend, User
+  **Result**: User sees only products
+  that do NOT have tags 1, 2, or 3
+  (e.g., gluten-free products)
+end note
+
+@enduml
+
