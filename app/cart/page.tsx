@@ -147,7 +147,7 @@ export default function CartPage() {
                                       src={item.product.imageUrl} 
                                       alt={item.product.name}
                                       objectFit="cover"
-                                      fill
+                                      layout="fill"
                                       className="w-full h-full object-cover"
                                       onError={(e) => {
                                         const target = e.target as HTMLImageElement;
@@ -297,7 +297,7 @@ export default function CartPage() {
                                                 alt={(orderItem as OrderItem).product.name || 'Product'}
                                                 className="w-full h-full object-cover"
                                                 objectFit="cover"
-                                                fill
+                                                layout="fill"
                                                 onError={(e) => {
                                                   const target = e.target as HTMLImageElement;
                                                   target.style.display = 'none';

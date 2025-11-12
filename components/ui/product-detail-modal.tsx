@@ -55,8 +55,8 @@ export function ProductDetailModal({
               src={product.imageUrl}
               alt={product.name}
               className="w-full h-full object-cover"
-              objectFit="cover"
               layout="fill"
+              objectFit="cover"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
@@ -79,6 +79,31 @@ export function ProductDetailModal({
               <div className="mb-3">
                 <h3 className="text-sm font-semibold text-gray-700 mb-1">Description</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">{product.description}</p>
+              </div>
+            )}
+
+            {/* Allergen Information */}
+            {product.tags && product.tags.length > 0 && (
+              <div className="mb-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Allergens
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {product.tags.map((tag) => (
+                    <div 
+                      key={tag.id}
+                      className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full"
+                    >
+                      <div 
+                        className="w-4 h-4 flex-shrink-0"
+                        dangerouslySetInnerHTML={{ 
+                          __html: tag.svgIcon.replace('<svg', '<svg width="16" height="16"') 
+                        }}
+                      />
+                      <span className="text-sm font-medium text-gray-800">{tag.name}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

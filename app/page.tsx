@@ -1,26 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { BottomNavigation } from "@/components/ui/bottom-navigation";
 import { ProductDetailModal } from "@/components/ui/product-detail-modal";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { Product } from "@/lib/interfaces/product";
-import { Category } from "@/lib/interfaces/category";
-import { fetchCategories } from "@/app/actions/category";
-import { Search } from "lucide-react";
+import { Tag } from "@/lib/interfaces/tag";
+import { fetchTags } from "@/app/actions/tag";
 import Image from "next/image";
 
 export default function Home() {
-  const { products, categories, loading, error } = useProducts();
+  const { products, categories, loading, error, loadProducts } = useProducts();
   const { addToCart } = useCart();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [selectedTags, setSelectedTags] = useState<number[]>([]);
+  const [allTags, setAllTags] = useState<Tag[]>([]);
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
@@ -37,104 +36,123 @@ export default function Home() {
     console.log(`Added ${quantity}x ${product.name} to cart`);
   };
 
-  // Fetch categories on component mount
+  // Fetch tags on component mount
   useEffect(() => {
-    const loadCategories = async () => {
+    const loadTags = async () => {
       try {
-        const categoryData = await fetchCategories();
-        setAllCategories(categoryData);
+        const tagData = await fetchTags();
+        setAllTags(tagData);
       } catch (error) {
-        console.error('Failed to fetch categories:', error);
+        console.error('Failed to fetch tags:', error);
       }
     };
-    loadCategories();
+    loadTags();
   }, []);
 
-  // Function to get all child category IDs for a given category
-  const getAllChildCategoryIds = (categoryName: string): number[] => {
-    if (categoryName === "All") return [];
-    
-    const category = allCategories.find(cat => cat.name === categoryName);
-    if (!category) return [];
-
-    const childIds: number[] = [category.id];
-    
-    // Recursive function to find all descendants
-    const findChildren = (parentId: number) => {
-      const children = allCategories.filter(cat => cat.parentId === parentId);
-      children.forEach(child => {
-        childIds.push(child.id);
-        findChildren(child.id); // Recursively find grandchildren
-      });
-    };
-    
-    findChildren(category.id);
-    return childIds;
+  // Toggle tag selection and reload products with exclusion filter
+  const toggleTag = (tagId: number) => {
+    setSelectedTags(prev => {
+      const newSelectedTags = prev.includes(tagId) 
+        ? prev.filter(id => id !== tagId) // Remove tag
+        : [...prev, tagId]; // Add tag
+      
+      // Reload products with new exclusion filter
+      loadProducts(newSelectedTags.length > 0 ? newSelectedTags : undefined);
+      return newSelectedTags;
+    });
   };
 
-  // Get category options for filter
-  const categoryOptions = ["All", ...allCategories.map(cat => cat.name)];
+  // Clear all selected tags and reload all products
+  const clearAllTags = () => {
+    setSelectedTags([]);
+    loadProducts(); // Load all products without exclusion
+  };
 
-  // Filter products based on search query and selected category
+  // Filter products based on search query only (tag filtering is done server-side)
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    if (!searchQuery) return true;
+    return product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (selectedCategory === "All") {
-      return matchesSearch;
-    }
-    
-    // Get all child category IDs for the selected category
-    const allowedCategoryIds = getAllChildCategoryIds(selectedCategory);
-    const matchesCategory = product.categoryId !== null && allowedCategoryIds.includes(product.categoryId);
-    
-    return matchesSearch && matchesCategory;
   });
 
-  // Define category mapping with multiple keys per category
-  const categoryMapping = [
-    { 
-      keys: ['Appetizers', 'Bread & Starters', 'Small Plates'], 
-      displayName: 'Voorgerecht' 
-    },
-    { 
-      keys: ['Main Courses', 'Meat Dishes', 'Pasta', 'Seafood'], 
-      displayName: 'Hoofdgerecht' 
-    },
-    { 
-      keys: ['Desserts', 'Cakes', 'Ice Cream'], 
-      displayName: 'Nagerecht' 
-    },
-    {
-      keys: ['Hot Drinks', 'Cold Drinks', 'Beverages', 'Alcoholic'],
-      displayName: 'Drinken'
-    }
-  ];
+  // Build completely dynamic category hierarchy from database
+  const buildCategoryHierarchy = useMemo(() => {
+    if (!categories || categories.length === 0) return [];
 
-  // Group products by category - use filtered products if searching/filtering
-  const productsToUse = searchQuery || selectedCategory !== "All" ? filteredProducts : products;
+    // Debug: Log all categories
+    console.log('🗂️ All categories:', categories);
+
+    // Find parent categories that have children, but exclude "Food" root category
+    const parentCategories = categories.filter(cat => {
+      const hasChildren = categories.some(child => child.parentId === cat.id);
+      const isNotFoodRoot = cat.name !== 'Food'; // Exclude the "Food" root category
+      console.log(`Category "${cat.name}": parentId=${cat.parentId}, hasChildren=${hasChildren}, isNotFoodRoot=${isNotFoodRoot}`);
+      return hasChildren && isNotFoodRoot;
+    });
+
+    console.log('🎯 Parent categories found:', parentCategories);
+
+    // Sort parent categories by their ID (database order) or by name alphabetically
+    const sortedParentCategories = parentCategories.sort((a, b) => {
+      // Option 1: Sort by database ID (creation order)
+      return a.id - b.id;
+      
+      // Option 2: Sort alphabetically by name (uncomment if preferred)
+      // return a.name.localeCompare(b.name);
+    });
+
+    return sortedParentCategories.map(parentCat => {
+      // Find all direct children of this parent
+      const childCategories = categories.filter(cat => cat.parentId === parentCat.id);
+      
+      // Get all category IDs that belong to this group (parent + all descendants)
+      const getAllDescendantIds = (categoryId: number): number[] => {
+        const directChildren = categories.filter(cat => cat.parentId === categoryId);
+        const allIds = [categoryId];
+        
+        directChildren.forEach(child => {
+          allIds.push(...getAllDescendantIds(child.id));
+        });
+        
+        return allIds;
+      };
+      
+      const allCategoryIds = getAllDescendantIds(parentCat.id);
+      
+      return {
+        id: parentCat.id,
+        name: parentCat.name,
+        displayName: parentCat.name, // Use original database name
+        categoryIds: allCategoryIds,
+        childCategories: childCategories.map(child => ({
+          id: child.id,
+          name: child.name,
+          displayName: child.name // Use original database name
+        }))
+      };
+    });
+  }, [categories]);
+
+  // Group products by dynamic category hierarchy
+  const productsToUse = searchQuery || selectedTags.length > 0 ? filteredProducts : products;
   
-  const groupedProducts = categoryMapping.map(categoryMap => {
-    // Find all categories that match any of the keys
-    const matchingCategories = categories.filter(cat => 
-      categoryMap.keys.includes(cat.name)
-    );
-    
-    // Get all category IDs from matching categories
-    const categoryIds = matchingCategories.map(cat => cat.id);
-    
-    // Filter products that belong to any of these categories
+  const groupedProducts = buildCategoryHierarchy.map(categoryGroup => {
+    // Filter products that belong to any category in this group (parent + all descendants)
     const categoryProducts = productsToUse.filter(product => 
-      product.categoryId !== null && categoryIds.includes(product.categoryId)
+      product.categoryId !== null && categoryGroup.categoryIds.includes(product.categoryId)
     );
     
     return {
-      id: categoryMap.keys.join('-'),
-      name: categoryMap.keys.join(' + '),
-      displayName: categoryMap.displayName,
-      products: categoryProducts
+      id: categoryGroup.id,
+      name: categoryGroup.name,
+      displayName: categoryGroup.displayName,
+      products: categoryProducts,
+      childCategories: categoryGroup.childCategories
     };
-  });
+  }).filter(group => group.products.length > 0); // Only show categories that have products
+
+  // Debug logging
+  console.log('📊 Grouped products:', groupedProducts);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -158,22 +176,44 @@ export default function Home() {
             
           </div>
 
-          {/* Category Filter Buttons */}
-          <div className="overflow-x-auto scrollbar-hide">
-            <div className="flex gap-2 pb-2" style={{ minWidth: 'max-content' }}>
-              {categoryOptions.map((categoryName) => (
+          {/* Tag Filter Section */}
+          <div className="mb-3">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-sm font-medium text-gray-700">Hide products containing allergies</h3>
+              {selectedTags.length > 0 && (
                 <button
-                  key={categoryName}
-                  onClick={() => setSelectedCategory(categoryName)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
-                    selectedCategory === categoryName
-                      ? "bg-green-500 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                  onClick={clearAllTags}
+                  className="text-xs text-blue-600 hover:text-blue-800"
                 >
-                  {categoryName}
+                  Show all ({selectedTags.length} hidden)
                 </button>
-              ))}
+              )}
+            </div>
+            
+            {/* Tag Filter Buttons */}
+            <div className="overflow-x-auto scrollbar-hide">
+              <div className="flex gap-2 pb-2" style={{ minWidth: 'max-content' }}>
+                {allTags.map((tag) => (
+                  <button
+                    key={tag.id}
+                    onClick={() => toggleTag(tag.id)}
+                    className={`flex items-center gap-1 px-3 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                      selectedTags.includes(tag.id)
+                        ? "bg-red-500 text-white border-2 border-red-600"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-transparent"
+                    }`}
+                  >
+                    {/* SVG Icon */}
+                    <div 
+                      className="w-4 h-4 flex-shrink-0"
+                      dangerouslySetInnerHTML={{ 
+                        __html: tag.svgIcon.replace('<svg', '<svg width="16" height="16"') 
+                      }}
+                    />
+                    <span>{tag.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -198,21 +238,38 @@ export default function Home() {
           {/* Search Results or Categories and Products */}
           {!loading && !error && (
             <div className="space-y-8">
-              {/* Show search/filter results */}
-              {(searchQuery || selectedCategory !== "All") && (
+              {/* Show search results only for text search (not tag filtering) */}
+              {searchQuery && !selectedTags.length && (
                 <div>
                   <h2 className="text-lg font-semibold text-gray-800 mb-3">
-                    {searchQuery 
-                      ? `Search Results (${filteredProducts.length})` 
-                      : `${selectedCategory} (${filteredProducts.length})`
+                    {searchQuery && selectedTags.length > 0
+                      ? `Search Results (${filteredProducts.length})`
+                      : searchQuery
+                      ? `Search Results (${filteredProducts.length})`
+                      : `Safe Products (${filteredProducts.length})`
                     }
+                    {selectedTags.length > 0 && (
+                      <span className="text-sm font-normal text-gray-600 ml-2">
+                        - {selectedTags.length} allergen{selectedTags.length > 1 ? 's' : ''} excluded
+                      </span>
+                    )}
                   </h2>
                   
                   {filteredProducts.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>No products found for &quot;{searchQuery || selectedCategory}&quot;</p>
-                      <p className="text-sm">Try different keywords</p>
+                      <p>
+                        {selectedTags.length > 0 
+                          ? "No safe products found with current allergen filters"
+                          : "No products found with current search"
+                        }
+                      </p>
+                      <p className="text-sm">
+                        {selectedTags.length > 0 
+                          ? "Try removing some allergen filters"
+                          : "Try adjusting your search query"
+                        }
+                      </p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -225,8 +282,10 @@ export default function Home() {
                           <CardContent className="p-0">
                             <div className="aspect-square bg-gray-100 relative flex items-center justify-center">
                               <Image 
-                                src={product?.imageUrl}
+                                src={product?.imageUrl || '/placeholder-food.jpg'}
                                 alt={product.name}
+                                width={300}
+                                height={300}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
@@ -244,6 +303,24 @@ export default function Home() {
                               {product.description && (
                                 <p className="text-gray-500 text-xs mt-1 line-clamp-2">{product.description}</p>
                               )}
+                              {/* Show product tags */}
+                              {product.tags && product.tags.length > 0 && (
+                                <div className="flex gap-1 mt-2 flex-wrap">
+                                  {product.tags.slice(0, 3).map((tag) => (
+                                    <div 
+                                      key={tag.id}
+                                      className="w-4 h-4 flex-shrink-0"
+                                      title={tag.name}
+                                      dangerouslySetInnerHTML={{ 
+                                        __html: tag.svgIcon.replace('<svg', '<svg width="16" height="16"') 
+                                      }}
+                                    />
+                                  ))}
+                                  {product.tags.length > 3 && (
+                                    <span className="text-xs text-gray-400">+{product.tags.length - 3}</span>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
@@ -253,25 +330,46 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Show normal categorized menu when not searching/filtering */}
-              {!searchQuery && selectedCategory === "All" && (
+              {/* Show categorized menu (always, but filtered when tags are selected) */}
+              {(!searchQuery || selectedTags.length > 0) && (
                 <>
+                  {/* Show filtering status */}
+                  {selectedTags.length > 0 && (
+                    <div className="mb-6">
+                      <h2 className="text-lg font-semibold text-gray-800 mb-2">
+                        Safe Menu ({groupedProducts.reduce((total, cat) => total + cat.products.length, 0)} products)
+                        <span className="text-sm font-normal text-gray-600 ml-2">
+                          - {selectedTags.length} allergen{selectedTags.length > 1 ? 's' : ''} excluded
+                        </span>
+                      </h2>
+                    </div>
+                  )}
+
                   {groupedProducts.map((category) => (
                     <div key={category.id}>
                       {/* Category Header */}
-                      <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 px-1">
+                      <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 px-1">
                         {category.displayName}
                       </h2>
+                      
+                      {/* Show child categories info if they exist */}
+                      {category.childCategories && category.childCategories.length > 0 && (
+                        <div className="mb-4 px-1">
+                          <p className="text-sm text-gray-600">
+                            Includes: {category.childCategories.map((child: {id: number; name: string; displayName: string}) => child.displayName).join(', ')}
+                          </p>
+                        </div>
+                      )}
                       
                       {/* Category Description for empty categories */}
                       {category.products.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">
-                          <p className="text-sm">Binnenkort beschikbaar</p>
+                          <p className="text-sm">Coming soon</p>
                         </div>
                       ) : (
                         /* Products Grid */
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                          {category.products.map((product) => (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+                          {category.products.map((product: Product) => (
                             <Card 
                               key={product.id} 
                               className="overflow-hidden cursor-pointer transition-transform hover:scale-105"
@@ -280,11 +378,11 @@ export default function Home() {
                               <CardContent className="p-0">
                                 <div className="aspect-square bg-gray-100 relative flex items-center justify-center">
                                   <Image
-                                    src={product?.imageUrl}
+                                    src={product?.imageUrl || '/placeholder-food.jpg'}
                                     alt={product.name}
+                                    width={300}
+                                    height={300}
                                     className="w-full h-full object-cover"
-                                    objectFit="cover"
-                                    fill
                                     onError={(e) => {
                                       const target = e.target as HTMLImageElement;
                                       target.style.display = 'none';
@@ -300,6 +398,24 @@ export default function Home() {
                                   <p className="text-green-600 font-semibold">€{product.price.toFixed(2)}</p>
                                   {product.description && (
                                     <p className="text-gray-500 text-xs mt-1 line-clamp-2">{product.description}</p>
+                                  )}
+                                  {/* Show product tags */}
+                                  {product.tags && product.tags.length > 0 && (
+                                    <div className="flex gap-1 mt-2 flex-wrap">
+                                      {product.tags.slice(0, 3).map((tag: Tag) => (
+                                        <div 
+                                          key={tag.id}
+                                          className="w-4 h-4 flex-shrink-0"
+                                          title={tag.name}
+                                          dangerouslySetInnerHTML={{ 
+                                            __html: tag.svgIcon.replace('<svg', '<svg width="16" height="16"') 
+                                          }}
+                                        />
+                                      ))}
+                                      {product.tags.length > 3 && (
+                                        <span className="text-xs text-gray-400">+{product.tags.length - 3}</span>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               </CardContent>

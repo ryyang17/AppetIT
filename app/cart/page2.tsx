@@ -111,7 +111,6 @@ export default function CartPage() {
                                   src={item.product.imageUrl}
                                   alt={item.product.name}
                                   className="w-full h-full object-cover"
-                                  objectFit="cover"
                                   layout="fill"
                                   onError={(e) => {
                                     // Fallback to placeholder if image doesn't exist

@@ -5,8 +5,14 @@ import { Product } from "@/lib/interfaces/product";
 import { revalidatePath } from "next/cache";
 
 // Simple API functions
-export const fetchProducts = async (): Promise<Product[]> => {
-  const response = await fetch(`${API_BASE_URL}/products`);
+export const fetchProducts = async (excludeTagIds?: number[]): Promise<Product[]> => {
+  let url = `${API_BASE_URL}/products`;
+  
+  if (excludeTagIds && excludeTagIds.length > 0) {
+    url += `?excludeTagIds=${excludeTagIds.join(',')}`;
+  }
+  
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Failed to fetch products');
   }

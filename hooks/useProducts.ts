@@ -12,11 +12,11 @@ export function useProducts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadProducts = async () => {
+  const loadProducts = async (excludeTagIds?: number[]) => {
     try {
       setLoading(true);
       const [productsData, categoriesData] = await Promise.all([
-        fetchProducts(),
+        fetchProducts(excludeTagIds),
         fetchCategories()
       ]);
       setProducts(productsData);
@@ -42,5 +42,5 @@ export function useProducts() {
     loadProducts();
   }, []);
 
-  return { products, categories, loading, error, addProduct, removeProduct, refreshProducts: loadProducts };
+  return { products, categories, loading, error, addProduct, removeProduct, refreshProducts: loadProducts, loadProducts };
 }
