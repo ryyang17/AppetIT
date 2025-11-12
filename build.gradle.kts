@@ -43,6 +43,8 @@ dependencies {
 
 	testImplementation(libs.spring.boot.starter.webflux.test)
 	testImplementation(libs.kotlin.test.junit5)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
 	testRuntimeOnly(libs.junit.platform.launcher)
 }
 
