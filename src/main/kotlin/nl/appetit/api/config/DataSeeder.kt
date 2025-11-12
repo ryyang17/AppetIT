@@ -1,19 +1,26 @@
 package nl.appetit.api.config
 
+import nl.appetit.api.config.AllergenSvgIcons
 import nl.appetit.api.data.entity.CategoryEntity
 import nl.appetit.api.data.entity.ProductEntity
+import nl.appetit.api.data.entity.TagEntity
 import nl.appetit.api.data.repository.CategoryR2dbcRepository
 import nl.appetit.api.data.repository.ProductR2dbcRepository
+import nl.appetit.api.data.repository.TagR2dbcRepository
+import nl.appetit.api.data.repository.ProductTagR2dbcRepository
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
 import org.springframework.context.annotation.Profile
 import java.math.BigDecimal
+
 @Profile("!prod")
 @Component
 class DataSeeder(
     private val categoryR2dbcRepository: CategoryR2dbcRepository,
-    private val productR2dbcRepository: ProductR2dbcRepository
+    private val productR2dbcRepository: ProductR2dbcRepository,
+    private val tagR2dbcRepository: TagR2dbcRepository,
+    private val productTagR2dbcRepository: ProductTagR2dbcRepository
 ) : CommandLineRunner {
 
     private val logger = LoggerFactory.getLogger(DataSeeder::class.java)
@@ -25,366 +32,252 @@ class DataSeeder(
         logger.info("Deleting all existing data...")
         productR2dbcRepository.deleteAll().block()
         categoryR2dbcRepository.deleteAll().block()
+        tagR2dbcRepository.deleteAll().block()
         logger.info("Data deleted successfully")
         
         // Seed categories with hierarchy
         val categoryMap = seedCategories()
         
+        // Seed allergen tags (EU 14 allergens) - must be done before products to get tag IDs
+        val tagMap = seedAllergens()
+        
         // Seed products with category assignments
-        seedProducts(categoryMap)
+        val productMap = seedProducts(categoryMap)
+        
+        // Associate allergens with products
+        seedProductAllergens(productMap, tagMap)
         
         logger.info("Data seeding completed!")
     }
 
     private fun seedCategories(): Map<String, Long> {
         logger.info("Seeding categories with hierarchy...")
-        
         val savedCategories = mutableMapOf<String, Long>()
         
-        // Root categories
-        val food = categoryR2dbcRepository.save(CategoryEntity(name = "Food", order = 1)).block()!!
-        savedCategories["Food"] = food.id!!
+        fun saveCategory(name: String, parentId: Long? = null, order: Int): Long {
+            val category = categoryR2dbcRepository.save(CategoryEntity(name = name, parentId = parentId, order = order)).block()!!
+            savedCategories[name] = category.id!!
+            return category.id!!
+        }
         
-        val beverages = categoryR2dbcRepository.save(CategoryEntity(name = "Beverages", order = 2)).block()!!
-        savedCategories["Beverages"] = beverages.id!!
+        // Root categories
+        val foodId = saveCategory("Food", order = 1)
+        val beveragesId = saveCategory("Beverages", order = 2)
         
         // Food subcategories
-        val appetizers = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Appetizers", parentId = food.id!!, order = 1)
-        ).block()!!
-        savedCategories["Appetizers"] = appetizers.id!!
-        
-        val mainCourses = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Main Courses", parentId = food.id!!, order = 2)
-        ).block()!!
-        savedCategories["Main Courses"] = mainCourses.id!!
-        
-        val salads = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Salads", parentId = food.id!!, order = 3)
-        ).block()!!
-        savedCategories["Salads"] = salads.id!!
-        
-        val desserts = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Desserts", parentId = food.id!!, order = 4)
-        ).block()!!
-        savedCategories["Desserts"] = desserts.id!!
+        val appetizersId = saveCategory("Appetizers", foodId, order = 1)
+        val mainCoursesId = saveCategory("Main Courses", foodId, order = 2)
+        val saladsId = saveCategory("Salads", foodId, order = 3)
+        val dessertsId = saveCategory("Desserts", foodId, order = 4)
         
         // Appetizers sub-subcategories
-        val breadStarters = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Bread & Starters", parentId = appetizers.id!!, order = 1)
-        ).block()!!
-        savedCategories["Bread & Starters"] = breadStarters.id!!
-        
-        val smallPlates = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Small Plates", parentId = appetizers.id!!, order = 2)
-        ).block()!!
-        savedCategories["Small Plates"] = smallPlates.id!!
+        saveCategory("Bread & Starters", appetizersId, order = 1)
+        saveCategory("Small Plates", appetizersId, order = 2)
         
         // Main Courses sub-subcategories
-        val meatDishes = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Meat Dishes", parentId = mainCourses.id!!, order = 1)
-        ).block()!!
-        savedCategories["Meat Dishes"] = meatDishes.id!!
-        
-        val seafood = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Seafood", parentId = mainCourses.id!!, order = 2)
-        ).block()!!
-        savedCategories["Seafood"] = seafood.id!!
-        
-        val pasta = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Pasta", parentId = mainCourses.id!!, order = 3)
-        ).block()!!
-        savedCategories["Pasta"] = pasta.id!!
-        
-        val vegetarian = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Vegetarian", parentId = mainCourses.id!!, order = 4)
-        ).block()!!
-        savedCategories["Vegetarian"] = vegetarian.id!!
+        saveCategory("Meat Dishes", mainCoursesId, order = 1)
+        saveCategory("Seafood", mainCoursesId, order = 2)
+        saveCategory("Pasta", mainCoursesId, order = 3)
+        saveCategory("Vegetarian", mainCoursesId, order = 4)
         
         // Beverages subcategories
-        val hotDrinks = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Hot Drinks", parentId = beverages.id!!, order = 1)
-        ).block()!!
-        savedCategories["Hot Drinks"] = hotDrinks.id!!
-        
-        val coldDrinks = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Cold Drinks", parentId = beverages.id!!, order = 2)
-        ).block()!!
-        savedCategories["Cold Drinks"] = coldDrinks.id!!
-        
-        val alcoholic = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Alcoholic", parentId = beverages.id!!, order = 3)
-        ).block()!!
-        savedCategories["Alcoholic"] = alcoholic.id!!
-
-
+        saveCategory("Hot Drinks", beveragesId, order = 1)
+        saveCategory("Cold Drinks", beveragesId, order = 2)
+        saveCategory("Alcoholic", beveragesId, order = 3)
 
         // Desserts subcategories
-        val cakes = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Cakes", parentId = desserts.id!!, order = 1)
-        ).block()!!
-        savedCategories["Cakes"] = cakes.id!!
-
-        val iceCreams = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Ice Creams", parentId = desserts.id!!, order = 2)
-        ).block()!!
-        savedCategories["Ice Creams"] = iceCreams.id!!
-
-        val pastries = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Pastries", parentId = desserts.id!!, order = 3)
-        ).block()!!
-        savedCategories["Pastries"] = pastries.id!!
+        saveCategory("Cakes", dessertsId, order = 1)
+        saveCategory("Ice Creams", dessertsId, order = 2)
+        saveCategory("Pastries", dessertsId, order = 3)
 
         // Salads subcategories
-        val greenSalads = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Green Salads", parentId = salads.id!!, order = 1)
-        ).block()!!
-        savedCategories["Green Salads"] = greenSalads.id!!
-
-        val fruitSalads = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Fruit Salads", parentId = salads.id!!, order = 2)
-        ).block()!!
-        savedCategories["Fruit Salads"] = fruitSalads.id!!
-
-        val proteinSalads = categoryR2dbcRepository.save(
-            CategoryEntity(name = "Protein Salads", parentId = salads.id!!, order = 3)
-        ).block()!!
-        savedCategories["Protein Salads"] = proteinSalads.id!!
+        saveCategory("Green Salads", saladsId, order = 1)
+        saveCategory("Fruit Salads", saladsId, order = 2)
+        saveCategory("Protein Salads", saladsId, order = 3)
         
         logger.info("${savedCategories.size} categories seeded successfully")
         return savedCategories
-
-
     }
 
-    private fun seedProducts(categoryMap: Map<String, Long>) {
+    private fun seedProducts(categoryMap: Map<String, Long>): Map<String, Int> {
         logger.info("Seeding products...")
         
-        val products = listOf(
-            // Bread & Starters
-            ProductEntity(
-                name = "Garlic Bread",
-                price = BigDecimal("4.50"),
-                description = "Fresh baked bread with garlic butter and herbs",
-                imageUrl = "https://images.unsplash.com/photo-1751199592465-f142293a8cc6?q=80&w=1168&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Bread & Starters"]?.toInt()
-            ),
-            ProductEntity(
-                name = "Bruschetta",
-                price = BigDecimal("6.00"),
-                description = "Toasted bread topped with tomatoes, basil, and mozzarella",
-                imageUrl = "https://images.unsplash.com/photo-1748718826530-06b08d46d078?q=80&w=724&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Bread & Starters"]?.toInt()
-            ),
-            
-            // Small Plates
-            ProductEntity(
-                name = "Chicken Wings",
-                price = BigDecimal("8.50"),
-                description = "Crispy chicken wings with your choice of sauce",
-                imageUrl = "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?q=80&w=960&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Small Plates"]?.toInt()
-            ),
-            
-            // Meat Dishes
-            ProductEntity(
-                name = "Beef Steak",
-                price = BigDecimal("24.00"),
-                description = "Premium ribeye steak cooked to your preference",
-                imageUrl = "https://plus.unsplash.com/premium_photo-1723478557023-1f739ec06671?q=80&w=1672&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Meat Dishes"]?.toInt()
-            ),
-            ProductEntity(
-                name = "Chicken Parmesan",
-                price = BigDecimal("16.50"),
-                description = "Breaded chicken breast with marinara sauce and mozzarella",
-                imageUrl = "https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Meat Dishes"]?.toInt()
-            ),
-            
-            // Seafood
-            ProductEntity(
-                name = "Grilled Salmon",
-                price = BigDecimal("18.50"),
-                description = "Fresh Atlantic salmon grilled to perfection with lemon butter",
-                imageUrl = "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Seafood"]?.toInt()
-            ),
-            ProductEntity(
-                name = "Shrimp Scampi",
-                price = BigDecimal("17.00"),
-                description = "Tender shrimp in white wine and garlic sauce",
-                imageUrl = "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Seafood"]?.toInt()
-            ),
-            
-            // Pasta
-            ProductEntity(
-                name = "Vegetarian Pasta",
-                price = BigDecimal("14.00"),
-                description = "Penne pasta with seasonal vegetables in a light cream sauce",
-                imageUrl = "https://media.istockphoto.com/id/1189709277/nl/foto/pasta-penne-met-geroosterde-tomaat-saus-mozzarella-kaas-grijze-stenen-achtergrond-bovenaanzicht.jpg?s=1024x1024&w=is&k=20&c=xdBy9QAifujU1gYAI0HSMQWzxuLKj4xfU3bqUhNNR4k=",
-                isAvailable = true,
-                categoryId = categoryMap["Pasta"]?.toInt()
-            ),
-            ProductEntity(
-                name = "Spaghetti Bolognese",
-                price = BigDecimal("13.00"),
-                description = "Classic spaghetti with traditional meat sauce",
-                imageUrl = "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Pasta"]?.toInt()
-            ),
-            
-            // Vegetarian
-            ProductEntity(
-                name = "Veggie Burger",
-                price = BigDecimal("12.50"),
-                description = "House-made veggie patty with fresh toppings",
-                imageUrl = "https://images.unsplash.com/photo-1585238341710-4dd9e42e1e9a?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Vegetarian"]?.toInt()
-            ),
-            
-            // Salads
-            ProductEntity(
-                name = "Caesar Salad",
-                price = BigDecimal("9.50"),
-                description = "Fresh romaine lettuce with Caesar dressing and croutons",
-                imageUrl = "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Salads"]?.toInt()
-            ),
-            ProductEntity(
-                name = "Greek Salad",
-                price = BigDecimal("10.50"),
-                description = "Mixed greens with feta cheese, olives, and Greek dressing",
-                imageUrl = "https://plus.unsplash.com/premium_photo-1676047258557-de72954cf17c?q=80&w=878&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Salads"]?.toInt()
-            ),
-            ProductEntity(
-                name = "Caprese Salad",
-                price = BigDecimal("11.00"),
-                description = "Fresh mozzarella, tomatoes, basil with balsamic glaze",
-                imageUrl = "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Salads"]?.toInt()
-            ),
-            
-            // Desserts
-            ProductEntity(
-                name = "Chocolate Cake",
-                price = BigDecimal("6.50"),
-                description = "Rich chocolate cake with chocolate ganache",
-                imageUrl = "https://images.unsplash.com/photo-1597083722160-c31d67d4af44?q=80&w=1816&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Desserts"]?.toInt()
-            ),
-            ProductEntity(
-                name = "Tiramisu",
-                price = BigDecimal("7.00"),
-                description = "Classic Italian dessert with coffee and mascarpone",
-                imageUrl = "https://plus.unsplash.com/premium_photo-1695028378225-97fbe39df62a?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Desserts"]?.toInt()
-            ),
-            ProductEntity(
-                name = "Ice Cream Sundae",
-                price = BigDecimal("5.50"),
-                description = "Vanilla ice cream with chocolate sauce and whipped cream",
-                imageUrl = "https://images.unsplash.com/photo-1657225953401-5f95007fc8e0?q=80&w=1738&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Desserts"]?.toInt()
-            ),
-            
-            // Hot Drinks
-            ProductEntity(
-                name = "Coffee",
-                price = BigDecimal("2.50"),
-                description = "Freshly brewed espresso-based coffee",
-                imageUrl = "https://images.unsplash.com/photo-1495774856032-8b90bbb32b32?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Hot Drinks"]?.toInt()
-            ),
-            ProductEntity(
-                name = "Cappuccino",
-                price = BigDecimal("3.50"),
-                description = "Espresso with steamed milk and foam",
-                imageUrl = "https://images.unsplash.com/photo-1517668808822-9ebb02ae2a0e?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Hot Drinks"]?.toInt()
-            ),
-            ProductEntity(
-                name = "Hot Chocolate",
-                price = BigDecimal("3.00"),
-                description = "Creamy hot chocolate with whipped cream",
-                imageUrl = "https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Hot Drinks"]?.toInt()
-            ),
-            
-            // Cold Drinks
-            ProductEntity(
-                name = "Fresh Orange Juice",
-                price = BigDecimal("3.50"),
-                description = "Freshly squeezed orange juice",
-                imageUrl = "https://images.unsplash.com/photo-1607690506833-498e04ab3ffa?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Cold Drinks"]?.toInt()
-            ),
-            ProductEntity(
-                name = "Sparkling Water",
-                price = BigDecimal("2.00"),
-                description = "Refreshing sparkling water",
-                imageUrl = "https://images.unsplash.com/photo-1619622683368-8a66b4b5c420?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Cold Drinks"]?.toInt()
-            ),
-            ProductEntity(
-                name = "Iced Tea",
-                price = BigDecimal("2.75"),
-                description = "Chilled iced tea with fresh lemon",
-                imageUrl = "https://images.unsplash.com/photo-1570020176750-e0dd52f6a83d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Cold Drinks"]?.toInt()
-            ),
-            
-            // Alcoholic
-            ProductEntity(
-                name = "House Red Wine",
-                price = BigDecimal("5.50"),
-                description = "Selection of premium red wine by the glass",
-                imageUrl = "https://images.unsplash.com/photo-1510812431401-41d2cab2707d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Alcoholic"]?.toInt()
-            ),
-            ProductEntity(
-                name = "House White Wine",
-                price = BigDecimal("5.50"),
-                description = "Selection of premium white wine by the glass",
-                imageUrl = "https://images.unsplash.com/photo-1510812431401-41d2cab2707d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Alcoholic"]?.toInt()
-            ),
-            ProductEntity(
-                name = "Craft Beer",
-                price = BigDecimal("4.50"),
-                description = "Selection of local craft beers",
-                imageUrl = "https://images.unsplash.com/photo-1608270861620-7c40f36e1b5d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                isAvailable = true,
-                categoryId = categoryMap["Alcoholic"]?.toInt()
-            )
+        data class ProductData(
+            val name: String,
+            val price: String,
+            val description: String,
+            val imageUrl: String,
+            val category: String
         )
         
-        productR2dbcRepository.saveAll(products).collectList().block()
-        logger.info("${products.size} products seeded successfully")
+        val productsData = listOf(
+            ProductData("Garlic Bread", "4.50", "Fresh baked bread with garlic butter and herbs", 
+                "https://images.unsplash.com/photo-1751199592465-f142293a8cc6?q=80&w=1168&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Bread & Starters"),
+            ProductData("Bruschetta", "6.00", "Toasted bread topped with tomatoes, basil, and mozzarella",
+                "https://images.unsplash.com/photo-1748718826530-06b08d46d078?q=80&w=724&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Bread & Starters"),
+            ProductData("Chicken Wings", "8.50", "Crispy chicken wings with your choice of sauce",
+                "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?q=80&w=960&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Small Plates"),
+            ProductData("Beef Steak", "24.00", "Premium ribeye steak cooked to your preference",
+                "https://plus.unsplash.com/premium_photo-1723478557023-1f739ec06671?q=80&w=1672&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Meat Dishes"),
+            ProductData("Chicken Parmesan", "16.50", "Breaded chicken breast with marinara sauce and mozzarella",
+                "https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Meat Dishes"),
+            ProductData("Grilled Salmon", "18.50", "Fresh Atlantic salmon grilled to perfection with lemon butter",
+                "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Seafood"),
+            ProductData("Shrimp Scampi", "17.00", "Tender shrimp in white wine and garlic sauce",
+                "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Seafood"),
+            ProductData("Vegetarian Pasta", "14.00", "Penne pasta with seasonal vegetables in a light cream sauce",
+                "https://media.istockphoto.com/id/1189709277/nl/foto/pasta-penne-met-geroosterde-tomaat-saus-mozzarella-kaas-grijze-stenen-achtergrond-bovenaanzicht.jpg?s=1024x1024&w=is&k=20&c=xdBy9QAifujU1gYAI0HSMQWzxuLKj4xfU3bqUhNNR4k=", "Pasta"),
+            ProductData("Spaghetti Bolognese", "13.00", "Classic spaghetti with traditional meat sauce",
+                "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Pasta"),
+            ProductData("Veggie Burger", "12.50", "House-made veggie patty with fresh toppings",
+                "https://images.unsplash.com/photo-1585238341710-4dd9e42e1e9a?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Vegetarian"),
+            ProductData("Caesar Salad", "9.50", "Fresh romaine lettuce with Caesar dressing and croutons",
+                "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Salads"),
+            ProductData("Greek Salad", "10.50", "Mixed greens with feta cheese, olives, and Greek dressing",
+                "https://plus.unsplash.com/premium_photo-1676047258557-de72954cf17c?q=80&w=878&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Salads"),
+            ProductData("Caprese Salad", "11.00", "Fresh mozzarella, tomatoes, basil with balsamic glaze",
+                "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Salads"),
+            ProductData("Chocolate Cake", "6.50", "Rich chocolate cake with chocolate ganache",
+                "https://images.unsplash.com/photo-1597083722160-c31d67d4af44?q=80&w=1816&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Desserts"),
+            ProductData("Tiramisu", "7.00", "Classic Italian dessert with coffee and mascarpone",
+                "https://plus.unsplash.com/premium_photo-1695028378225-97fbe39df62a?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Desserts"),
+            ProductData("Ice Cream Sundae", "5.50", "Vanilla ice cream with chocolate sauce and whipped cream",
+                "https://images.unsplash.com/photo-1657225953401-5f95007fc8e0?q=80&w=1738&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Desserts"),
+            ProductData("Coffee", "2.50", "Freshly brewed espresso-based coffee",
+                "https://images.unsplash.com/photo-1495774856032-8b90bbb32b32?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Hot Drinks"),
+            ProductData("Cappuccino", "3.50", "Espresso with steamed milk and foam",
+                "https://images.unsplash.com/photo-1517668808822-9ebb02ae2a0e?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Hot Drinks"),
+            ProductData("Hot Chocolate", "3.00", "Creamy hot chocolate with whipped cream",
+                "https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Hot Drinks"),
+            ProductData("Fresh Orange Juice", "3.50", "Freshly squeezed orange juice",
+                "https://images.unsplash.com/photo-1607690506833-498e04ab3ffa?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Cold Drinks"),
+            ProductData("Sparkling Water", "2.00", "Refreshing sparkling water",
+                "https://images.unsplash.com/photo-1619622683368-8a66b4b5c420?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Cold Drinks"),
+            ProductData("Iced Tea", "2.75", "Chilled iced tea with fresh lemon",
+                "https://images.unsplash.com/photo-1570020176750-e0dd52f6a83d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Cold Drinks"),
+            ProductData("House Red Wine", "5.50", "Selection of premium red wine by the glass",
+                "https://images.unsplash.com/photo-1510812431401-41d2cab2707d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Alcoholic"),
+            ProductData("House White Wine", "5.50", "Selection of premium white wine by the glass",
+                "https://images.unsplash.com/photo-1510812431401-41d2cab2707d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Alcoholic"),
+            ProductData("Craft Beer", "4.50", "Selection of local craft beers",
+                "https://images.unsplash.com/photo-1608270861620-7c40f36e1b5d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Alcoholic")
+        )
+        
+        val products = productsData.map { data ->
+            ProductEntity(
+                name = data.name,
+                price = BigDecimal(data.price),
+                description = data.description,
+                imageUrl = data.imageUrl,
+                isAvailable = true,
+                categoryId = categoryMap[data.category]?.toInt()
+            )
+        }
+        
+        val savedProducts = productR2dbcRepository.saveAll(products).collectList().block()!!
+        logger.info("${savedProducts.size} products seeded successfully")
+        return savedProducts.associate { it.name to (it.id ?: 0) }
+    }
+
+    private fun seedAllergens(): Map<String, Int> {
+        logger.info("Seeding EU 14 allergen tags...")
+        
+        val allergenData = mapOf(
+            "Cereals containing gluten" to AllergenSvgIcons.GLUTEN,
+            "Crustaceans" to AllergenSvgIcons.CRUSTACEANS,
+            "Eggs" to AllergenSvgIcons.EGGS,
+            "Fish" to AllergenSvgIcons.FISH,
+            "Peanuts" to AllergenSvgIcons.PEANUTS,
+            "Soybeans" to AllergenSvgIcons.SOYBEANS,
+            "Milk" to AllergenSvgIcons.MILK,
+            "Nuts" to AllergenSvgIcons.NUTS,
+            "Celery" to AllergenSvgIcons.CELERY,
+            "Mustard" to AllergenSvgIcons.MUSTARD,
+            "Sesame seeds" to AllergenSvgIcons.SESAME,
+            "Sulphur dioxide and sulphites" to AllergenSvgIcons.SULPHITES,
+            "Lupin" to AllergenSvgIcons.LUPIN,
+            "Molluscs" to AllergenSvgIcons.MOLLUSCS
+        )
+        
+        val allergens = allergenData.map { (name, icon) -> TagEntity(name = name, svgIcon = icon) }
+        val savedTags = tagR2dbcRepository.saveAll(allergens).collectList().block()!!
+        logger.info("${savedTags.size} allergen tags seeded successfully")
+        return savedTags.associate { it.name to (it.id ?: 0) }
+    }
+
+    private fun seedProductAllergens(productMap: Map<String, Int>, tagMap: Map<String, Int>) {
+        logger.info("Associating allergens with products...")
+        
+        // Define allergen associations based on product ingredients
+        val productAllergenMap = mapOf(
+            // Bread & Starters
+            "Garlic Bread" to listOf("Cereals containing gluten", "Milk"),
+            "Bruschetta" to listOf("Cereals containing gluten", "Milk"),
+            
+            // Small Plates
+            "Chicken Wings" to listOf(), // Typically no common allergens, but sauces may vary
+            
+            // Meat Dishes
+            "Beef Steak" to listOf(), // Typically no common allergens
+            "Chicken Parmesan" to listOf("Cereals containing gluten", "Eggs", "Milk"),
+            
+            // Seafood
+            "Grilled Salmon" to listOf("Fish"),
+            "Shrimp Scampi" to listOf("Crustaceans", "Milk", "Sulphur dioxide and sulphites"),
+            
+            // Pasta
+            "Vegetarian Pasta" to listOf("Cereals containing gluten", "Milk"),
+            "Spaghetti Bolognese" to listOf("Cereals containing gluten", "Milk"),
+            
+            // Vegetarian
+            "Veggie Burger" to listOf("Soybeans", "Cereals containing gluten", "Eggs"), // Common veggie burger ingredients
+            
+            // Salads
+            "Caesar Salad" to listOf("Eggs", "Fish", "Milk", "Cereals containing gluten"), // Caesar dressing contains anchovies, eggs, cheese; croutons contain gluten
+            "Greek Salad" to listOf("Milk"), // Feta cheese
+            "Caprese Salad" to listOf("Milk"), // Mozzarella
+            
+            // Desserts
+            "Chocolate Cake" to listOf("Cereals containing gluten", "Eggs", "Milk"),
+            "Tiramisu" to listOf("Eggs", "Milk", "Cereals containing gluten"),
+            "Ice Cream Sundae" to listOf("Milk"),
+            
+            // Hot Drinks
+            "Coffee" to listOf(), // No common allergens
+            "Cappuccino" to listOf("Milk"),
+            "Hot Chocolate" to listOf("Milk"),
+            
+            // Cold Drinks
+            "Fresh Orange Juice" to listOf(), // No common allergens
+            "Sparkling Water" to listOf(), // No common allergens
+            "Iced Tea" to listOf(), // No common allergens
+            
+            // Alcoholic
+            "House Red Wine" to listOf("Sulphur dioxide and sulphites"),
+            "House White Wine" to listOf("Sulphur dioxide and sulphites"),
+            "Craft Beer" to listOf("Cereals containing gluten")
+        )
+        
+        var associationsCount = 0
+        productAllergenMap.forEach { (productName, allergenNames) ->
+            val productId = productMap[productName]
+            if (productId != null && productId > 0) {
+                allergenNames.forEach { allergenName ->
+                    val tagId = tagMap[allergenName]
+                    if (tagId != null && tagId > 0) {
+                        try {
+                            productTagR2dbcRepository.insert(productId, tagId).block()
+                            associationsCount++
+                        } catch (e: Exception) {
+                            logger.warn("Failed to associate allergen '$allergenName' with product '$productName': ${e.message}")
+                        }
+                    }
+                }
+            } else {
+                logger.warn("Product '$productName' not found in product map")
+            }
+        }
+        
+        logger.info("$associationsCount allergen-product associations created successfully")
     }
 }
