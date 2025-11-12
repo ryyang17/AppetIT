@@ -30,7 +30,7 @@ object EmployeeMapper {
             lastName = this.lastName,
             role = parsedRole,
             personnelNumber = this.personnelNumber,
-            restaurantId = null, // TODO: Implement restaurant ID functionality
+            restaurantId = this.restaurantId,
             active = this.active
         )
     }

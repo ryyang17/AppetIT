@@ -10,6 +10,6 @@ data class EmployeeRequest(
     val lastName: String,
     val role: String,
     val personnelNumber: Int? = null,
-    val restaurantId: Int? = null, // TODO: Implement restaurant ID functionality
+    val restaurantId: Int? = null,
     val active: Boolean = true
 )

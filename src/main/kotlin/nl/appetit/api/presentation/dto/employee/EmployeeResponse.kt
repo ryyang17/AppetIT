@@ -9,7 +9,7 @@ data class EmployeeResponse(
     val lastName: String,
     val role: EmployeeRole,
     val personnelNumber: Int?,
-    val restaurantId: Int?, // TODO: Implement restaurant ID functionality
+    val restaurantId: Int?,
     val active: Boolean,
     val createdAt: Instant?,
     val updatedAt: Instant?
