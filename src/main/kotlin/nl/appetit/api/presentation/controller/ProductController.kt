@@ -1,7 +1,8 @@
 package nl.appetit.api.presentation.controller
 
-import nl.appetit.api.data.entity.ProductEntity
-import nl.appetit.api.logic.model.Product
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.tags.Tag
 import nl.appetit.api.logic.service.ProductService
 import nl.appetit.api.logic.service.TagService
 import nl.appetit.api.presentation.dto.product.ProductRequest
@@ -12,67 +13,131 @@ import nl.appetit.api.presentation.mapper.TagMapper
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.math.BigDecimal
 
 @RestController
 @RequestMapping("/products")
+@Tag(name = "Products", description = "Endpoints for managing products and filtering by tags")
 class ProductController(
     private val productService: ProductService,
     private val tagService: TagService
 ) {
 
     @GetMapping
-    fun list(): Flux<ProductResponse> = productService.findAll()
-        .map(ProductMapper::toResponse)
+    @Operation(
+        summary = "Get all products with optional tag exclusion filter",
+        description = "Retrieves all products. Optionally excludes products that have any of the specified tags (useful for allergy/dietary restrictions). " +
+                "If excludeTagIds is provided, products with those tags are filtered out. Each product includes its associated tags in the response."
+    )
+    fun list(
+        @Parameter(
+            description = "Comma-separated list of tag IDs to exclude. Products with any of these tags will be filtered out.",
+            required = false
+        )
+        @RequestParam(required = false) excludeTagIds: String?
+    ): Flux<ProductResponse> {
+        val tagIds = excludeTagIds?.split(",")
+            ?.mapNotNull { it.trim().toIntOrNull() }
+            ?.takeIf { it.isNotEmpty() }
+            ?: emptyList()
 
-	// Get all products for a specific category
-	// Example: GET /products/category/1
-	@GetMapping("/category/{categoryId}")
-	fun listByCategory(@PathVariable categoryId: Int): Flux<ProductResponse> =
-		productService.findAllByCategoryId(categoryId)
-            .map(ProductMapper::toResponse)
+        val products = if (tagIds.isEmpty()) {
+            productService.findAll()
+        } else {
+            productService.findAllExcludingTagIds(tagIds)
+        }
 
-	@PostMapping
-	fun insert(@RequestBody request: Mono<ProductRequest>): Mono<ProductResponse> {
-		return request.flatMap { product ->
-			productService.save(ProductMapper.toModel(product))
-                .map(ProductMapper::toResponse)
-		}
-	}
+        return products.flatMap { product ->
+            tagService.getTagsByProductId(product.id!!)
+                .map(TagMapper::toResponse)
+                .collectList()
+                .map { tags ->
+                    ProductMapper.toResponse(product, tags)
+                }
+        }
+    }
 
-	@PutMapping("/{id}")
-	fun update(@PathVariable id: Int, @RequestBody request: Mono<ProductRequest>): Mono<ProductResponse> =
-		request.flatMap { product ->
-			productService.update(id, ProductMapper.toModel(product))
-                .map(ProductMapper::toResponse)
-		}
+    @GetMapping("/category/{categoryId}")
+    @Operation(
+        summary = "Get all products in a specific category",
+        description = "Retrieves all products that belong to the specified category. Each product includes its associated tags in the response."
+    )
+    fun listByCategory(
+        @Parameter(description = "The ID of the category to filter products by", required = true)
+        @PathVariable categoryId: Int
+    ): Flux<ProductResponse> =
+        productService.findAllByCategoryId(categoryId)
+            .flatMap { product ->
+                tagService.getTagsByProductId(product.id!!)
+                    .map(TagMapper::toResponse)
+                    .collectList()
+                    .map { tags ->
+                        ProductMapper.toResponse(product, tags)
+                    }
+            }
+
+    @PostMapping
+    @Operation(
+        summary = "Create a new product",
+        description = "Creates a new product with the provided details. The product will be created without any tags initially."
+    )
+    fun insert(
+        @Parameter(description = "The product data to create", required = true)
+        @RequestBody request: Mono<ProductRequest>
+    ): Mono<ProductResponse> {
+        return request.flatMap { product ->
+            productService.save(ProductMapper.toModel(product))
+                .flatMap { savedProduct ->
+                    tagService.getTagsByProductId(savedProduct.id!!)
+                        .map(TagMapper::toResponse)
+                        .collectList()
+                        .map { tags ->
+                            ProductMapper.toResponse(savedProduct, tags)
+                        }
+                }
+        }
+    }
+
+    @PutMapping("/{id}")
+    @Operation(
+        summary = "Update an existing product",
+        description = "Updates the product with the specified ID. Only the provided fields will be updated. Tags are not modified by this endpoint."
+    )
+    fun update(
+        @Parameter(description = "The ID of the product to update", required = true)
+        @PathVariable id: Int,
+        @Parameter(description = "The updated product data", required = true)
+        @RequestBody request: Mono<ProductRequest>
+    ): Mono<ProductResponse> =
+        request.flatMap { product ->
+            productService.update(id, ProductMapper.toModel(product))
+                .flatMap { updatedProduct ->
+                    tagService.getTagsByProductId(updatedProduct.id!!)
+                        .map(TagMapper::toResponse)
+                        .collectList()
+                        .map { tags ->
+                            ProductMapper.toResponse(updatedProduct, tags)
+                        }
+                }
+        }
 
     @DeleteMapping("/{id}")
-    fun delete(@PathVariable id: Int): Mono<Void> =
+    @Operation(
+        summary = "Delete a product by ID",
+        description = "Deletes the product with the specified ID. All product-tag relationships will be automatically removed due to CASCADE delete."
+    )
+    fun delete(
+        @Parameter(description = "The ID of the product to delete", required = true)
+        @PathVariable id: Int
+    ): Mono<Void> =
         productService.deleteById(id)
 
     @DeleteMapping
+    @Operation(
+        summary = "Delete all products",
+        description = "Deletes all products from the database. All product-tag relationships will be automatically removed due to CASCADE delete. Use with caution!"
+    )
     fun deleteAll(): Mono<Void> =
         productService.deleteAll()
-
-    @GetMapping("/{productId}/tags")
-    fun getTagsByProductId(@PathVariable productId: Int): Flux<TagResponse> =
-        tagService.getTagsByProductId(productId)
-            .map(TagMapper::toResponse)
-
-    @PostMapping("/{productId}/tags/{tagId}")
-    fun addTagToProduct(
-        @PathVariable productId: Int,
-        @PathVariable tagId: Int
-    ): Mono<Void> =
-        tagService.addTagToProduct(productId, tagId)
-
-    @DeleteMapping("/{productId}/tags/{tagId}")
-    fun removeTagFromProduct(
-        @PathVariable productId: Int,
-        @PathVariable tagId: Int
-    ): Mono<Void> =
-        tagService.removeTagFromProduct(productId, tagId)
 }
 
 

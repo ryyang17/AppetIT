@@ -3,13 +3,15 @@ package nl.appetit.api.logic.service
 import nl.appetit.api.data.entity.ProductEntity
 import nl.appetit.api.logic.model.Product
 import nl.appetit.api.logic.repository.ProductRepository
+import nl.appetit.api.logic.repository.ProductTagRepository
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 @Service
 class ProductService(
-    private val db: ProductRepository
+    private val db: ProductRepository,
+    private val productTagRepository: ProductTagRepository
 ) {
     fun findAll(): Flux<Product> =
         db.findAll()
@@ -41,6 +43,15 @@ class ProductService(
 	// Get all products that belong to a specific category
 	fun findAllByCategoryId(categoryId: Int): Flux<Product> =
 		db.findAllByCategoryId(categoryId)
+
+	// Get all products that do NOT have any of the specified tags
+	fun findAllExcludingTagIds(tagIds: List<Int>): Flux<Product> {
+		return if (tagIds.isEmpty()) {
+			findAll()
+		} else {
+			productTagRepository.findProductsExcludingTagIds(tagIds)
+		}
+	}
 }
 
 

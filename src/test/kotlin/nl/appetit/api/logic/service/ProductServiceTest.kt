@@ -2,6 +2,7 @@ package nl.appetit.api.logic.service
 
 import nl.appetit.api.logic.model.Product
 import nl.appetit.api.logic.repository.ProductRepository
+import nl.appetit.api.logic.repository.ProductTagRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -15,12 +16,14 @@ import java.time.Instant
 class ProductServiceTest {
 
     private lateinit var productRepository: ProductRepository
+    private lateinit var productTagRepository: ProductTagRepository
     private lateinit var productService: ProductService
 
     @BeforeEach
     fun setUp() {
         productRepository = mock()
-        productService = ProductService(productRepository)
+        productTagRepository = mock()
+        productService = ProductService(productRepository, productTagRepository)
     }
 
     @Test
@@ -155,6 +158,96 @@ class ProductServiceTest {
             .verifyComplete()
 
         verify(productRepository, times(1)).findAllByCategoryId(categoryId)
+    }
+
+    @Test
+    fun `findAllExcludingTagIds should return all products when tagIds is empty`() {
+        // Arrange
+        val products = listOf(
+            createProduct(1, "Product 1"),
+            createProduct(2, "Product 2")
+        )
+        whenever(productRepository.findAll()).thenReturn(Flux.fromIterable(products))
+
+        // Act
+        val result = productService.findAllExcludingTagIds(emptyList())
+
+        // Assert
+        StepVerifier.create(result)
+            .expectNext(products[0])
+            .expectNext(products[1])
+            .verifyComplete()
+
+        verify(productRepository, times(1)).findAll()
+        verify(productTagRepository, never()).findProductsExcludingTagIds(any())
+    }
+
+    @Test
+    fun `findAllExcludingTagIds should return filtered products when tagIds provided`() {
+        // Arrange
+        val tagIds = listOf(1, 2)
+        val filteredProducts = listOf(
+            createProduct(3, "Product 3"), // Product without tags 1 or 2
+            createProduct(4, "Product 4")  // Product without tags 1 or 2
+        )
+        whenever(productTagRepository.findProductsExcludingTagIds(tagIds))
+            .thenReturn(Flux.fromIterable(filteredProducts))
+
+        // Act
+        val result = productService.findAllExcludingTagIds(tagIds)
+
+        // Assert
+        StepVerifier.create(result)
+            .expectNext(filteredProducts[0])
+            .expectNext(filteredProducts[1])
+            .verifyComplete()
+
+        verify(productTagRepository, times(1)).findProductsExcludingTagIds(tagIds)
+        verify(productRepository, never()).findAll()
+    }
+
+    @Test
+    fun `findAllExcludingTagIds should exclude products with any of the specified tags`() {
+        // Arrange
+        val tagIds = listOf(1) // Exclude products with tag 1
+        val filteredProducts = listOf(
+            createProduct(2, "Product without tag 1"),
+            createProduct(3, "Another product without tag 1")
+        )
+        whenever(productTagRepository.findProductsExcludingTagIds(tagIds))
+            .thenReturn(Flux.fromIterable(filteredProducts))
+
+        // Act
+        val result = productService.findAllExcludingTagIds(tagIds)
+
+        // Assert
+        StepVerifier.create(result)
+            .expectNext(filteredProducts[0])
+            .expectNext(filteredProducts[1])
+            .verifyComplete()
+
+        verify(productTagRepository, times(1)).findProductsExcludingTagIds(tagIds)
+    }
+
+    @Test
+    fun `findAllExcludingTagIds should handle multiple tag exclusions`() {
+        // Arrange
+        val tagIds = listOf(1, 2, 3) // Exclude products with any of these tags
+        val filteredProducts = listOf(
+            createProduct(4, "Product without tags 1, 2, or 3")
+        )
+        whenever(productTagRepository.findProductsExcludingTagIds(tagIds))
+            .thenReturn(Flux.fromIterable(filteredProducts))
+
+        // Act
+        val result = productService.findAllExcludingTagIds(tagIds)
+
+        // Assert
+        StepVerifier.create(result)
+            .expectNext(filteredProducts[0])
+            .verifyComplete()
+
+        verify(productTagRepository, times(1)).findProductsExcludingTagIds(tagIds)
     }
 
     private fun createProduct(

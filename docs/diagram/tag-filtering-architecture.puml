@@ -1,0 +1,88 @@
+@startuml Tag Filtering Architecture
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+package "Frontend (User App)" {
+  [User Interface] as UI
+  [Tag Filter Bar] as FilterBar
+  [Product List] as ProductList
+}
+
+package "API Layer" {
+  [ProductController] as ProductCtrl
+  [ProductTagController] as ProductTagCtrl
+  [TagController] as TagCtrl
+}
+
+package "Service Layer" {
+  [ProductService] as ProductService
+  [TagService] as TagService
+}
+
+package "Repository Layer" {
+  [ProductRepository] as ProductRepo
+  [ProductTagRepository] as ProductTagRepo
+  [TagRepository] as TagRepo
+}
+
+package "Database" {
+  database "PostgreSQL" {
+    entity "product" as ProductTable
+    entity "tag" as TagTable
+    entity "product_tag" as ProductTagTable
+  }
+}
+
+' Frontend connections
+UI --> FilterBar : User selects tags
+FilterBar --> ProductList : Filter products
+ProductList --> UI : Display filtered products
+
+' API calls
+FilterBar --> ProductCtrl : GET /products?excludeTagIds=1,2,3
+ProductList --> ProductCtrl : GET /products?excludeTagIds=1,2,3
+FilterBar --> TagCtrl : GET /tags
+ProductList --> ProductTagCtrl : GET /product-tags/product/{id}/tags
+
+' Controller to Service
+ProductCtrl --> ProductService : findAllExcludingTagIds()
+ProductCtrl --> TagService : getTagsByProductId()
+ProductTagCtrl --> TagService : manage relationships
+TagCtrl --> TagService : CRUD operations
+
+' Service to Repository
+ProductService --> ProductRepo : findAll()
+ProductService --> ProductTagRepo : findProductsExcludingTagIds()
+TagService --> TagRepo : CRUD operations
+TagService --> ProductTagRepo : findTagsByProductId()
+
+' Repository to Database
+ProductRepo --> ProductTable : SELECT
+ProductTagRepo --> ProductTagTable : SELECT (exclusion query)
+ProductTagRepo --> TagTable : JOIN queries
+TagRepo --> TagTable : CRUD
+
+' Database relationships
+ProductTable ||--o{ ProductTagTable : has many
+TagTable ||--o{ ProductTagTable : has many
+
+note right of ProductCtrl
+  **Tag Exclusion Filtering**
+  - Query parameter: excludeTagIds
+  - Returns products WITHOUT specified tags
+  - Includes tags in response
+end note
+
+note right of ProductTagRepo
+  **Exclusion Query**
+  SELECT products WHERE
+  product_id NOT IN (
+    SELECT product_id FROM product_tag
+    WHERE tag_id IN (:tagIds)
+  )
+end note
+
+@enduml
+

@@ -1,7 +1,9 @@
 package nl.appetit.api.data.repository.impl
 
+import nl.appetit.api.data.mapper.ProductMapper
 import nl.appetit.api.data.mapper.TagMapper
 import nl.appetit.api.data.repository.ProductTagR2dbcRepository
+import nl.appetit.api.logic.model.Product
 import nl.appetit.api.logic.model.Tag
 import nl.appetit.api.logic.repository.ProductTagRepository
 import org.springframework.stereotype.Component
@@ -23,4 +25,7 @@ class ProductTagRepositoryImpl(
 
     override fun existsByProductIdAndTagId(productId: Int, tagId: Int): Mono<Boolean> =
         db.existsByProductIdAndTagId(productId, tagId)
+
+    override fun findProductsExcludingTagIds(tagIds: List<Int>): Flux<Product> =
+        db.findProductsExcludingTagIds(tagIds).map(ProductMapper::toModel)
 }

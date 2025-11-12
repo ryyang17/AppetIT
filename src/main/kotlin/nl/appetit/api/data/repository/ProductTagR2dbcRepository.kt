@@ -1,5 +1,6 @@
 package nl.appetit.api.data.repository
 
+import nl.appetit.api.data.entity.ProductEntity
 import nl.appetit.api.data.entity.TagEntity
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
@@ -21,4 +22,15 @@ interface ProductTagR2dbcRepository : ReactiveCrudRepository<TagEntity, Int> {
 
 	@Query("SELECT EXISTS(SELECT 1 FROM product_tag WHERE product_id = :productId AND tag_id = :tagId)")
 	fun existsByProductIdAndTagId(productId: Int, tagId: Int): Mono<Boolean>
+
+	@Query("""
+		SELECT DISTINCT p.product_id, p.name, p.price, p.description, p.image_url, p.is_available, p.category_id, p.created_at, p.updated_at 
+		FROM product p 
+		WHERE p.product_id NOT IN (
+			SELECT pt.product_id 
+			FROM product_tag pt 
+			WHERE pt.tag_id IN (:tagIds)
+		)
+	""")
+	fun findProductsExcludingTagIds(tagIds: List<Int>): Flux<ProductEntity>
 }
