@@ -8,9 +8,9 @@ import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import { Loader2, Search } from "lucide-react";
 import { Product } from "@/lib/interfaces/product";
-import { Category } from "@/lib/interfaces/category";
 import { Tag } from "@/lib/interfaces/tag";
 import { fetchTags } from "@/app/actions/tag";
+import Image from "next/image";
 
 export default function Home() {
   const { products, categories, loading, error, loadProducts } = useProducts();
@@ -131,7 +131,7 @@ export default function Home() {
         }))
       };
     });
-  }, [categories, products]);
+  }, [categories]);
 
   // Group products by dynamic category hierarchy
   const productsToUse = searchQuery || selectedTags.length > 0 ? filteredProducts : products;
@@ -281,9 +281,11 @@ export default function Home() {
                         >
                           <CardContent className="p-0">
                             <div className="aspect-square bg-gray-100 relative flex items-center justify-center">
-                              <img 
-                                src={product?.imageUrl}
+                              <Image 
+                                src={product?.imageUrl || '/placeholder-food.jpg'}
                                 alt={product.name}
+                                width={300}
+                                height={300}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
@@ -354,7 +356,7 @@ export default function Home() {
                       {category.childCategories && category.childCategories.length > 0 && (
                         <div className="mb-4 px-1">
                           <p className="text-sm text-gray-600">
-                            Includes: {category.childCategories.map((child: any) => child.displayName).join(', ')}
+                            Includes: {category.childCategories.map((child: {id: number; name: string; displayName: string}) => child.displayName).join(', ')}
                           </p>
                         </div>
                       )}
@@ -367,7 +369,7 @@ export default function Home() {
                       ) : (
                         /* Products Grid */
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
-                          {category.products.map((product: any) => (
+                          {category.products.map((product: Product) => (
                             <Card 
                               key={product.id} 
                               className="overflow-hidden cursor-pointer transition-transform hover:scale-105"
@@ -375,9 +377,11 @@ export default function Home() {
                             >
                               <CardContent className="p-0">
                                 <div className="aspect-square bg-gray-100 relative flex items-center justify-center">
-                                  <img
-                                    src={product?.imageUrl}
+                                  <Image
+                                    src={product?.imageUrl || '/placeholder-food.jpg'}
                                     alt={product.name}
+                                    width={300}
+                                    height={300}
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
                                       const target = e.target as HTMLImageElement;
@@ -398,7 +402,7 @@ export default function Home() {
                                   {/* Show product tags */}
                                   {product.tags && product.tags.length > 0 && (
                                     <div className="flex gap-1 mt-2 flex-wrap">
-                                      {product.tags.slice(0, 3).map((tag: any) => (
+                                      {product.tags.slice(0, 3).map((tag: Tag) => (
                                         <div 
                                           key={tag.id}
                                           className="w-4 h-4 flex-shrink-0"
