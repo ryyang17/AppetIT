@@ -55,8 +55,8 @@ export function ProductDetailModal({
               src={product.imageUrl}
               alt={product.name}
               className="w-full h-full object-cover"
-              objectFit="cover"
               layout="fill"
+              objectFit="cover"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';

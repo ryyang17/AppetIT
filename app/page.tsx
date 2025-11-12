@@ -227,6 +227,8 @@ export default function Home() {
                               <Image 
                                 src={product?.imageUrl}
                                 alt={product.name}
+                                layout="fill"
+                                objectFit="cover"
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
@@ -284,7 +286,7 @@ export default function Home() {
                                     alt={product.name}
                                     className="w-full h-full object-cover"
                                     objectFit="cover"
-                                    fill
+                                    layout="fill"
                                     onError={(e) => {
                                       const target = e.target as HTMLImageElement;
                                       target.style.display = 'none';
