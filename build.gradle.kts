@@ -46,9 +46,6 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
 	testRuntimeOnly(libs.junit.platform.launcher)
-	testImplementation("io.mockk:mockk:1.13.8")
-	testImplementation("io.projectreactor:reactor-test:3.6.1")
-	testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
 }
 
 kotlin {
