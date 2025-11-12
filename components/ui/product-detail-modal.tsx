@@ -82,6 +82,31 @@ export function ProductDetailModal({
               </div>
             )}
 
+            {/* Allergen Information */}
+            {product.tags && product.tags.length > 0 && (
+              <div className="mb-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Allergens
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {product.tags.map((tag) => (
+                    <div 
+                      key={tag.id}
+                      className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full"
+                    >
+                      <div 
+                        className="w-4 h-4 flex-shrink-0"
+                        dangerouslySetInnerHTML={{ 
+                          __html: tag.svgIcon.replace('<svg', '<svg width="16" height="16"') 
+                        }}
+                      />
+                      <span className="text-sm font-medium text-gray-800">{tag.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Availability Status */}
             <div className="mb-3">
               <span className={`inline-block px-2 py-1 rounded-full text-sm font-medium ${
