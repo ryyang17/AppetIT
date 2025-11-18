@@ -17,6 +17,10 @@ class OrderRepositoryImpl(
         db.findAll()
             .map(OrderMapper::toModel)
 
+    override fun findByTableId(tableId: Int): Flux<Order> =
+        db.findByTableId(tableId)
+            .map(OrderMapper::toModel)
+
     override fun save(order: Order): Mono<Order> =
         db.save(OrderMapper.toEntity(order))
             .map(OrderMapper::toModel)

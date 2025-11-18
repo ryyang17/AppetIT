@@ -22,6 +22,11 @@ class OrderController(
     fun list(): Flux<OrderResponse> = orderService.findAll()
         .map(OrderMapper::toResponse)
 
+    @GetMapping("/table/{tableId}")
+    fun listByTable(@PathVariable tableId: Int): Flux<OrderResponse> =
+        orderService.findByTableId(tableId)
+            .map(OrderMapper::toResponse)
+
     @PostMapping
     fun insert(@RequestBody request: Mono<OrderRequest>): Mono<OrderResponse> =
         request.flatMap { order ->
