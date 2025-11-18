@@ -1,13 +1,16 @@
 package nl.appetit.api.config
 
-import nl.appetit.api.config.AllergenSvgIcons
 import nl.appetit.api.data.entity.CategoryEntity
 import nl.appetit.api.data.entity.ProductEntity
 import nl.appetit.api.data.entity.TagEntity
+import nl.appetit.api.data.entity.TableEntity
+import nl.appetit.api.data.entity.RestaurantEntity
 import nl.appetit.api.data.repository.CategoryR2dbcRepository
 import nl.appetit.api.data.repository.ProductR2dbcRepository
 import nl.appetit.api.data.repository.TagR2dbcRepository
 import nl.appetit.api.data.repository.ProductTagR2dbcRepository
+import nl.appetit.api.data.repository.RestaurantR2dbcRepository
+import nl.appetit.api.data.repository.TableR2dbcRepository
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
@@ -20,7 +23,9 @@ class DataSeeder(
     private val categoryR2dbcRepository: CategoryR2dbcRepository,
     private val productR2dbcRepository: ProductR2dbcRepository,
     private val tagR2dbcRepository: TagR2dbcRepository,
-    private val productTagR2dbcRepository: ProductTagR2dbcRepository
+    private val productTagR2dbcRepository: ProductTagR2dbcRepository,
+    private val restaurantR2dbcRepository: RestaurantR2dbcRepository,
+    private val tableR2dbcRepository: TableR2dbcRepository
 ) : CommandLineRunner {
 
     private val logger = LoggerFactory.getLogger(DataSeeder::class.java)
@@ -33,6 +38,7 @@ class DataSeeder(
         productR2dbcRepository.deleteAll().block()
         categoryR2dbcRepository.deleteAll().block()
         tagR2dbcRepository.deleteAll().block()
+        tableR2dbcRepository.deleteAll().block()
         logger.info("Data deleted successfully")
         
         // Seed categories with hierarchy
@@ -46,7 +52,10 @@ class DataSeeder(
         
         // Associate allergens with products
         seedProductAllergens(productMap, tagMap)
-        
+
+        // Seed tables (1..10) for each restaurant (create a demo restaurant if none exist)
+        seedTables()
+
         logger.info("Data seeding completed!")
     }
 
@@ -56,8 +65,9 @@ class DataSeeder(
         
         fun saveCategory(name: String, parentId: Long? = null, order: Int): Long {
             val category = categoryR2dbcRepository.save(CategoryEntity(name = name, parentId = parentId, order = order)).block()!!
-            savedCategories[name] = category.id!!
-            return category.id!!
+            val id = category.id ?: throw IllegalStateException("Category id is null after save for $name")
+            savedCategories[name] = id
+            return id
         }
         
         // Root categories
@@ -279,5 +289,31 @@ class DataSeeder(
         }
         
         logger.info("$associationsCount allergen-product associations created successfully")
+    }
+
+    private fun seedTables() {
+        logger.info("Seeding tables (1..10) for each restaurant...")
+
+        val restaurants = restaurantR2dbcRepository.findAll().collectList().block() ?: emptyList()
+        var restaurantList = restaurants
+
+        if (restaurantList.isEmpty()) {
+            // create a default demo restaurant to attach tables to
+            val demo = RestaurantEntity(name = "Demo Restaurant", address = "Demo Address", phone = "", email = "", isActive = true)
+            val savedDemo = restaurantR2dbcRepository.save(demo).block()!!
+            restaurantList = listOf(savedDemo)
+            logger.info("No restaurants found. Created demo restaurant with id=${savedDemo.id}")
+        }
+
+        val tables = mutableListOf<TableEntity>()
+        restaurantList.forEach { rest ->
+            val rid = rest.id ?: return@forEach
+            for (i in 1..10) {
+                tables.add(TableEntity(restaurantId = rid, tableNumber = i, capacity = 4))
+            }
+        }
+
+        val savedTables = tableR2dbcRepository.saveAll(tables).collectList().block()!!
+        logger.info("${savedTables.size} tables seeded successfully for ${restaurantList.size} restaurant(s)")
     }
 }
