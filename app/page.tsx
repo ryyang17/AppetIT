@@ -20,6 +20,8 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [tagsLoading, setTagsLoading] = useState(true);
+  const [tagsError, setTagsError] = useState<string | null>(null);
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
@@ -40,10 +42,16 @@ export default function Home() {
   useEffect(() => {
     const loadTags = async () => {
       try {
+        setTagsLoading(true);
+        setTagsError(null);
         const tagData = await fetchTags();
         setAllTags(tagData);
+        console.log('Tags loaded:', tagData.length);
       } catch (error) {
         console.error('Failed to fetch tags:', error);
+        setTagsError(error instanceof Error ? error.message : 'Failed to load tags');
+      } finally {
+        setTagsLoading(false);
       }
     };
     loadTags();
@@ -191,30 +199,41 @@ export default function Home() {
             </div>
             
             {/* Tag Filter Buttons */}
-            <div className="overflow-x-auto scrollbar-hide">
-              <div className="flex gap-2 pb-2" style={{ minWidth: 'max-content' }}>
-                {allTags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    onClick={() => toggleTag(tag.id)}
-                    className={`flex items-center gap-1 px-3 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
-                      selectedTags.includes(tag.id)
-                        ? "bg-red-500 text-white border-2 border-red-600"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-transparent"
-                    }`}
-                  >
-                    {/* SVG Icon */}
-                    <div 
-                      className="w-4 h-4 flex-shrink-0"
-                      dangerouslySetInnerHTML={{ 
-                        __html: tag.svgIcon.replace('<svg', '<svg width="16" height="16"') 
-                      }}
-                    />
-                    <span>{tag.name}</span>
-                  </button>
-                ))}
+            {tagsLoading ? (
+              <div className="flex items-center gap-2 py-2">
+                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                <span className="text-xs text-gray-500">Loading allergens...</span>
               </div>
-            </div>
+            ) : tagsError ? (
+              <div className="text-xs text-red-500 py-2">
+                Failed to load allergens: {tagsError}
+              </div>
+            ) : allTags.length > 0 ? (
+              <div className="overflow-x-auto scrollbar-hide">
+                <div className="flex gap-2 pb-2" style={{ minWidth: 'max-content' }}>
+                  {allTags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      onClick={() => toggleTag(tag.id)}
+                      className={`flex items-center gap-1 px-3 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                        selectedTags.includes(tag.id)
+                          ? "bg-red-500 text-white border-2 border-red-600"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-transparent"
+                      }`}
+                    >
+                      {/* SVG Icon */}
+                      <div 
+                        className="w-4 h-4 flex-shrink-0"
+                        dangerouslySetInnerHTML={{ 
+                          __html: tag.svgIcon.replace('<svg', '<svg width="16" height="16"') 
+                        }}
+                      />
+                      <span>{tag.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
 
