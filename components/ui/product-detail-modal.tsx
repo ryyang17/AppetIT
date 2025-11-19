@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
+import { getDictionarySync } from "@/app/locales";
+import { type Locale } from "@/lib/i18n/config";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { X, Plus, Minus, ShoppingCart } from "lucide-react";
@@ -20,6 +23,9 @@ export function ProductDetailModal({
   onClose, 
   onAddToCart 
 }: ProductDetailModalProps) {
+  const params = useParams();
+  const lang = (params.lang as Locale) || 'en';
+  const dict = getDictionarySync(lang);
   const [quantity, setQuantity] = useState(1);
 
   if (!isOpen || !product) return null;
@@ -77,7 +83,7 @@ export function ProductDetailModal({
 
             {product.description && (
               <div className="mb-3">
-                <h3 className="text-sm font-semibold text-gray-700 mb-1">Description</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-1">{dict.product.description}</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">{product.description}</p>
               </div>
             )}
@@ -86,7 +92,7 @@ export function ProductDetailModal({
             {product.tags && product.tags.length > 0 && (
               <div className="mb-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                  Allergens
+                  {dict.product.allergens}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {product.tags.map((tag) => (
@@ -114,13 +120,13 @@ export function ProductDetailModal({
                   ? 'bg-green-100 text-green-800' 
                   : 'bg-red-100 text-red-800'
               }`}>
-                {product.available ? 'Available' : 'Not Available'}
+                {product.available ? dict.product.available : dict.product.notAvailable}
               </span>
             </div>
 
             {/* Quantity Selector */}
             <div className="mb-3">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">Quantity</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">{dict.product.quantity}</h3>
               <div className="flex items-center space-x-3">
                 <Button
                   variant="outline"
@@ -145,7 +151,7 @@ export function ProductDetailModal({
             {/* Total Price */}
             <div className="mb-3 p-3 bg-gray-50 rounded-lg">
               <div className="flex justify-between items-center">
-                <span className="font-medium text-gray-700">Total:</span>
+                <span className="font-medium text-gray-700">{dict.product.total}:</span>
                 <span className="text-lg font-bold text-gray-900">
                   €{(product.price * quantity).toFixed(2)}
                 </span>
@@ -159,7 +165,7 @@ export function ProductDetailModal({
               className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 text-base font-semibold flex-shrink-0"
             >
               <ShoppingCart className="h-5 w-5 mr-2" />
-              {product.available ? 'Add to Cart' : 'Out of Stock'}
+              {product.available ? dict.product.addToCart : dict.product.outOfStock}
             </Button>
           </div>
         </CardContent>

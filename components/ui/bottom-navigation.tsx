@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Home, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useParams } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
+import { getDictionarySync } from "@/app/locales";
+import { type Locale } from "@/lib/i18n/config";
 
 interface BottomNavigationItem {
   icon: React.ReactNode;
@@ -24,21 +26,24 @@ export function BottomNavigation({
   className 
 }: BottomNavigationProps) {
   const pathname = usePathname();
+  const params = useParams();
+  const lang = (params.lang as Locale) || 'en';
+  const dict = getDictionarySync(lang);
   const { getTotalItems } = useCart();
   const totalCartItems = getTotalItems();
   
   const items: BottomNavigationItem[] = [
     {
       icon: <Home className="h-5 w-5" />,
-      label: "Home",
-      href: "/",
-      active: pathname === "/",
+      label: dict.navigation.home,
+      href: `/${lang}`,
+      active: pathname === `/${lang}`,
     },
     {
       icon: <ShoppingCart className="h-5 w-5" />,
-      label: "Cart",
-      href: "/cart",
-      active: pathname === "/cart",
+      label: dict.navigation.cart,
+      href: `/${lang}/cart`,
+      active: pathname === `/${lang}/cart`,
       badge: totalCartItems > 0 ? totalCartItems : undefined,
     },
   ];
