@@ -4,10 +4,12 @@ import nl.appetit.api.config.AllergenSvgIcons
 import nl.appetit.api.data.entity.CategoryEntity
 import nl.appetit.api.data.entity.ProductEntity
 import nl.appetit.api.data.entity.TagEntity
+import nl.appetit.api.data.entity.TranslationEntity
 import nl.appetit.api.data.repository.CategoryR2dbcRepository
 import nl.appetit.api.data.repository.ProductR2dbcRepository
 import nl.appetit.api.data.repository.TagR2dbcRepository
 import nl.appetit.api.data.repository.ProductTagR2dbcRepository
+import nl.appetit.api.data.repository.TranslationR2dbcRepository
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
@@ -20,7 +22,8 @@ class DataSeeder(
     private val categoryR2dbcRepository: CategoryR2dbcRepository,
     private val productR2dbcRepository: ProductR2dbcRepository,
     private val tagR2dbcRepository: TagR2dbcRepository,
-    private val productTagR2dbcRepository: ProductTagR2dbcRepository
+    private val productTagR2dbcRepository: ProductTagR2dbcRepository,
+    private val translationR2dbcRepository: TranslationR2dbcRepository
 ) : CommandLineRunner {
 
     private val logger = LoggerFactory.getLogger(DataSeeder::class.java)
@@ -33,6 +36,7 @@ class DataSeeder(
         productR2dbcRepository.deleteAll().block()
         categoryR2dbcRepository.deleteAll().block()
         tagR2dbcRepository.deleteAll().block()
+        translationR2dbcRepository.deleteAll().block()
         logger.info("Data deleted successfully")
         
         // Seed categories with hierarchy
@@ -46,6 +50,9 @@ class DataSeeder(
         
         // Associate allergens with products
         seedProductAllergens(productMap, tagMap)
+
+        // Seed translations
+        seedTranslations(categoryMap, productMap)
         
         logger.info("Data seeding completed!")
     }
@@ -178,6 +185,102 @@ class DataSeeder(
         logger.info("${savedProducts.size} products seeded successfully")
         return savedProducts.associate { it.name to (it.id ?: 0) }
     }
+    
+    private fun seedTranslations(categoryMap: Map<String, Long>, productMap: Map<String, Int>) {
+        logger.info("Seeding translations...")
+        
+        val categoryTranslations = mapOf(
+            "Food" to "Eten",
+            "Beverages" to "Dranken",
+            "Appetizers" to "Voorgerechten",
+            "Main Courses" to "Hoofdgerechten",
+            "Salads" to "Salades",
+            "Desserts" to "Nagerechten",
+            "Bread & Starters" to "Brood & Voorgerechten",
+            "Small Plates" to "Kleine Gerechten",
+            "Meat Dishes" to "Vleesgerechten",
+            "Seafood" to "Zeevruchten",
+            "Pasta" to "Pasta",
+            "Vegetarian" to "Vegetarisch",
+            "Hot Drinks" to "Warme Dranken",
+            "Cold Drinks" to "Koude Dranken",
+            "Alcoholic" to "Alcoholisch",
+            "Cakes" to "Taarten",
+            "Ice Creams" to "IJsjes",
+            "Pastries" to "Gebak",
+            "Green Salads" to "Groene Salades",
+            "Fruit Salads" to "Fruitsalades",
+            "Protein Salads" to "Proteïne Salades"
+        )
+        val productTranslations = mapOf(
+            "Garlic Bread" to "Knoflookbrood",
+            "Bruschetta" to "Bruschetta",
+            "Chicken Wings" to "Kippenvleugels",
+            "Beef Steak" to "Biefstuk",
+            "Chicken Parmesan" to "Kip Parmezaan",
+            "Grilled Salmon" to "Gegrilde Zalm",
+            "Shrimp Scampi" to "Scampi",
+            "Vegetarian Pasta" to "Vegetarische Pasta",
+            "Spaghetti Bolognese" to "Spaghetti Bolognese",
+            "Veggie Burger" to "Veggie Burger",
+            "Caesar Salad" to "Caesar Salade",
+            "Greek Salad" to "Griekse Salade",
+            "Caprese Salad" to "Caprese Salade",
+            "Chocolate Cake" to "Chocoladetaart",
+            "Tiramisu" to "Tiramisu",
+            "Ice Cream Sundae" to "IJscoupe",
+            "Coffee" to "Koffie",
+            "Cappuccino" to "Cappuccino",
+            "Hot Chocolate" to "Warme Chocolademelk",
+            "Fresh Orange Juice" to "Vers Sinaasappelsap",
+            "Sparkling Water" to "Bruisend Water",
+            "Iced Tea" to "IJsthee",
+            "House Red Wine" to "Huiswijn Rood",
+            "House White Wine" to "Huiswijn Wit",
+            "Craft Beer" to "Speciaal Bier"
+        )
+        val translations = mutableListOf<TranslationEntity>()
+        
+        // Category translations
+        categoryTranslations.forEach { (englishName, dutchName) ->
+            val categoryId = categoryMap[englishName]
+            if (categoryId != null) {
+                translations.add(TranslationEntity(
+                    entityType = "category",
+                    entityId = categoryId,
+                    language = "en",
+                    translation = englishName
+                ))
+                translations.add(TranslationEntity(
+                    entityType = "category",
+                    entityId = categoryId,
+                    language = "nl",
+                    translation = dutchName
+                ))
+            }
+        }
+        // Product translations
+        productTranslations.forEach { (englishName, dutchName) ->
+            val productId = productMap[englishName]
+            if (productId != null && productId > 0) {
+                translations.add(TranslationEntity(
+                    entityType = "product",
+                    entityId = productId.toLong(),
+                    language = "en",
+                    translation = englishName
+                ))
+                translations.add(TranslationEntity(
+                    entityType = "product",
+                    entityId = productId.toLong(),
+                    language = "nl",
+                    translation = dutchName
+                ))
+            }
+        }
+        
+        translationR2dbcRepository.saveAll(translations).collectList().block()
+        logger.info("${translations.size} translations seeded successfully")
+    }
 
     private fun seedAllergens(): Map<String, Int> {
         logger.info("Seeding EU 14 allergen tags...")
@@ -280,4 +383,5 @@ class DataSeeder(
         
         logger.info("$associationsCount allergen-product associations created successfully")
     }
+    
 }
