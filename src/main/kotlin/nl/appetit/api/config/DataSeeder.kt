@@ -185,10 +185,11 @@ class DataSeeder(
         logger.info("${savedProducts.size} products seeded successfully")
         return savedProducts.associate { it.name to (it.id ?: 0) }
     }
-    
+
     private fun seedTranslations(categoryMap: Map<String, Long>, productMap: Map<String, Int>) {
         logger.info("Seeding translations...")
         
+        // Category translations
         val categoryTranslations = mapOf(
             "Food" to "Eten",
             "Beverages" to "Dranken",
@@ -212,33 +213,189 @@ class DataSeeder(
             "Fruit Salads" to "Fruitsalades",
             "Protein Salads" to "Proteïne Salades"
         )
-        val productTranslations = mapOf(
-            "Garlic Bread" to "Knoflookbrood",
-            "Bruschetta" to "Bruschetta",
-            "Chicken Wings" to "Kippenvleugels",
-            "Beef Steak" to "Biefstuk",
-            "Chicken Parmesan" to "Kip Parmezaan",
-            "Grilled Salmon" to "Gegrilde Zalm",
-            "Shrimp Scampi" to "Scampi",
-            "Vegetarian Pasta" to "Vegetarische Pasta",
-            "Spaghetti Bolognese" to "Spaghetti Bolognese",
-            "Veggie Burger" to "Veggie Burger",
-            "Caesar Salad" to "Caesar Salade",
-            "Greek Salad" to "Griekse Salade",
-            "Caprese Salad" to "Caprese Salade",
-            "Chocolate Cake" to "Chocoladetaart",
-            "Tiramisu" to "Tiramisu",
-            "Ice Cream Sundae" to "IJscoupe",
-            "Coffee" to "Koffie",
-            "Cappuccino" to "Cappuccino",
-            "Hot Chocolate" to "Warme Chocolademelk",
-            "Fresh Orange Juice" to "Vers Sinaasappelsap",
-            "Sparkling Water" to "Bruisend Water",
-            "Iced Tea" to "IJsthee",
-            "House Red Wine" to "Huiswijn Rood",
-            "House White Wine" to "Huiswijn Wit",
-            "Craft Beer" to "Speciaal Bier"
+        
+        // Product name + description translations
+        data class ProductTranslation(
+            val englishName: String,
+            val dutchName: String,
+            val englishDescription: String,
+            val dutchDescription: String
         )
+        
+        val productTranslations = listOf(
+            // Bread & Starters
+            ProductTranslation(
+                "Garlic Bread", 
+                "Knoflookbrood",
+                "Fresh baked bread with garlic butter and herbs",
+                "Vers gebakken brood met knoflookboter en kruiden"
+            ),
+            ProductTranslation(
+                "Bruschetta",
+                "Bruschetta", 
+                "Toasted bread topped with tomatoes, basil, and mozzarella",
+                "Geroosterd brood met tomaten, basilicum en mozzarella"
+            ),
+            
+            // Small Plates
+            ProductTranslation(
+                "Chicken Wings",
+                "Kippenvleugels",
+                "Crispy chicken wings with your choice of sauce",
+                "Krokante kippenvleugels met saus naar keuze"
+            ),
+            
+            // Meat Dishes
+            ProductTranslation(
+                "Beef Steak",
+                "Biefstuk",
+                "Premium ribeye steak cooked to your preference",
+                "Premium ribeye biefstuk bereid naar wens"
+            ),
+            ProductTranslation(
+                "Chicken Parmesan",
+                "Kip Parmezaan",
+                "Breaded chicken breast with marinara sauce and mozzarella",
+                "Gepaneerde kipfilet met tomatensaus en mozzarella"
+            ),
+            
+            // Seafood
+            ProductTranslation(
+                "Grilled Salmon",
+                "Gegrilde Zalm",
+                "Fresh Atlantic salmon grilled to perfection with lemon butter",
+                "Verse Atlantische zalm gegrild met citroenboter"
+            ),
+            ProductTranslation(
+                "Shrimp Scampi",
+                "Scampi",
+                "Tender shrimp in white wine and garlic sauce",
+                "Malse garnalen in witte wijn en knoflooksaus"
+            ),
+            
+            // Pasta
+            ProductTranslation(
+                "Vegetarian Pasta",
+                "Vegetarische Pasta",
+                "Penne pasta with seasonal vegetables in a light cream sauce",
+                "Penne pasta met seizoensgroenten in lichte roomsaus"
+            ),
+            ProductTranslation(
+                "Spaghetti Bolognese",
+                "Spaghetti Bolognese",
+                "Classic spaghetti with traditional meat sauce",
+                "Klassieke spaghetti met traditionele vleessaus"
+            ),
+            
+            // Vegetarian
+            ProductTranslation(
+                "Veggie Burger",
+                "Veggie Burger",
+                "House-made veggie patty with fresh toppings",
+                "Huisgemaakte veggie burger met verse toppings"
+            ),
+            
+            // Salads
+            ProductTranslation(
+                "Caesar Salad",
+                "Caesar Salade",
+                "Fresh romaine lettuce with Caesar dressing and croutons",
+                "Verse romaine sla met Caesar dressing en croutons"
+            ),
+            ProductTranslation(
+                "Greek Salad",
+                "Griekse Salade",
+                "Mixed greens with feta cheese, olives, and Greek dressing",
+                "Gemengde sla met fetakaas, olijven en Griekse dressing"
+            ),
+            ProductTranslation(
+                "Caprese Salad",
+                "Caprese Salade",
+                "Fresh mozzarella, tomatoes, basil with balsamic glaze",
+                "Verse mozzarella, tomaten, basilicum met balsamico glazuur"
+            ),
+            
+            // Desserts
+            ProductTranslation(
+                "Chocolate Cake",
+                "Chocoladetaart",
+                "Rich chocolate cake with chocolate ganache",
+                "Rijke chocoladetaart met chocolade ganache"
+            ),
+            ProductTranslation(
+                "Tiramisu",
+                "Tiramisu",
+                "Classic Italian dessert with coffee and mascarpone",
+                "Klassiek Italiaans dessert met koffie en mascarpone"
+            ),
+            ProductTranslation(
+                "Ice Cream Sundae",
+                "IJscoupe",
+                "Vanilla ice cream with chocolate sauce and whipped cream",
+                "Vanille-ijs met chocoladesaus en slagroom"
+            ),
+            
+            // Hot Drinks
+            ProductTranslation(
+                "Coffee",
+                "Koffie",
+                "Freshly brewed espresso-based coffee",
+                "Vers gezette espresso-gebaseerde koffie"
+            ),
+            ProductTranslation(
+                "Cappuccino",
+                "Cappuccino",
+                "Espresso with steamed milk and foam",
+                "Espresso met gestoomde melk en melkschuim"
+            ),
+            ProductTranslation(
+                "Hot Chocolate",
+                "Warme Chocolademelk",
+                "Creamy hot chocolate with whipped cream",
+                "Romige warme chocolademelk met slagroom"
+            ),
+            
+            // Cold Drinks
+            ProductTranslation(
+                "Fresh Orange Juice",
+                "Vers Sinaasappelsap",
+                "Freshly squeezed orange juice",
+                "Vers geperst sinaasappelsap"
+            ),
+            ProductTranslation(
+                "Sparkling Water",
+                "Bruisend Water",
+                "Refreshing sparkling water",
+                "Verfrissend bruisend water"
+            ),
+            ProductTranslation(
+                "Iced Tea",
+                "IJsthee",
+                "Chilled iced tea with fresh lemon",
+                "Gekoelde ijsthee met verse citroen"
+            ),
+            
+            // Alcoholic
+            ProductTranslation(
+                "House Red Wine",
+                "Huiswijn Rood",
+                "Selection of premium red wine by the glass",
+                "Selectie van premium rode wijn per glas"
+            ),
+            ProductTranslation(
+                "House White Wine",
+                "Huiswijn Wit",
+                "Selection of premium white wine by the glass",
+                "Selectie van premium witte wijn per glas"
+            ),
+            ProductTranslation(
+                "Craft Beer",
+                "Speciaal Bier",
+                "Selection of local craft beers",
+                "Selectie van lokale speciaalbieren"
+            )
+        )
+        
         val translations = mutableListOf<TranslationEntity>()
         
         // Category translations
@@ -259,21 +416,37 @@ class DataSeeder(
                 ))
             }
         }
-        // Product translations
-        productTranslations.forEach { (englishName, dutchName) ->
-            val productId = productMap[englishName]
+        
+        // Product name + description translations
+        productTranslations.forEach { translation ->
+            val productId = productMap[translation.englishName]
             if (productId != null && productId > 0) {
+                // Name translations
                 translations.add(TranslationEntity(
                     entityType = "product",
                     entityId = productId.toLong(),
                     language = "en",
-                    translation = englishName
+                    translation = translation.englishName
                 ))
                 translations.add(TranslationEntity(
                     entityType = "product",
                     entityId = productId.toLong(),
                     language = "nl",
-                    translation = dutchName
+                    translation = translation.dutchName
+                ))
+                
+                // Description translations
+                translations.add(TranslationEntity(
+                    entityType = "product_description",
+                    entityId = productId.toLong(),
+                    language = "en",
+                    translation = translation.englishDescription
+                ))
+                translations.add(TranslationEntity(
+                    entityType = "product_description",
+                    entityId = productId.toLong(),
+                    language = "nl",
+                    translation = translation.dutchDescription
                 ))
             }
         }
