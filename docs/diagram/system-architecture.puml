@@ -1,0 +1,33 @@
+@startuml Appetit Container View
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+Person(admin, "Admin", "Beheert menu, personeel, tafels.")
+Person(staff, "Medewerker", "Ziet bestellingen en tafels in het personeelportaal.")
+Person(guest, "Gast", "Bestelt via tablet/phone applicatie.")
+
+System_Boundary(appetit_system, "Appetit Platform") {
+  Container(ops_ui, "Operations Frontend", "Next.js", "Eén webapp voor admins en medewerkers (rol bepaalt schermen).")
+  Container(guest_ui, "Guest Ordering Frontend", "Next.js", "Tablets/phones voor gasten.")
+  Container(app_api, "Appetit API", "Spring Boot WebFlux", "REST + WebSocket backend met R2DBC.")
+  ContainerDb(database, "PostgreSQL", "R2DBC", "Persistentie van producten, tags, bestellingen, personeel.")
+}
+
+Container_Ext(flyway, "Flyway Migrator", "Flyway CLI", "Voert DB-migraties uit bij deployment.")
+
+Rel(admin, ops_ui, "Gebruikt", "HTTPS + role=admin")
+Rel(staff, ops_ui, "Gebruikt", "HTTPS + role=staff")
+Rel(guest, guest_ui, "Gebruikt", "HTTPS")
+
+Rel(ops_ui, app_api, "REST + WebSocket")
+Rel(guest_ui, app_api, "REST")
+Rel(app_api, database, "R2DBC queries", "TCP")
+Rel(flyway, database, "Schema migraties", "JDBC")
+
+UpdateElementStyle(app_api, $bgColor="#F0FFF4", $borderColor="#2F855A")
+
+SHOW_LEGEND()
+
+@enduml
+
