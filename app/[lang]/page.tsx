@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { getDictionarySync } from "@/app/locales";
 import { type Locale } from "@/lib/i18n/config";
+import { useDatabaseTranslations } from "@/hooks/useDatabaseTranslations";
 import { Card, CardContent } from "@/components/ui/card";
 import { BottomNavigation } from "@/components/ui/bottom-navigation";
 import { ProductDetailModal } from "@/components/ui/product-detail-modal";
@@ -20,6 +21,14 @@ export default function Home() {
   const params = useParams();
   const lang = (params.lang as Locale) || 'en';
   const dict = getDictionarySync(lang);
+  
+  // Fetch database translations - ONE hook for all translations
+  const {
+    getCategoryTranslation,
+    getProductTranslation,
+    getTagTranslation,
+    loading: translationsLoading
+  } = useDatabaseTranslations(lang);
   
   const { products, categories, loading, error, loadProducts } = useProducts();
   const { addToCart } = useCart();
@@ -57,17 +66,24 @@ export default function Home() {
     loadTags();
   }, []);
 
-  // Toggle tag selection and reload products with exclusion filter
+  // Toggle tag selection
   const toggleTag = (tagId: number) => {
     setSelectedTags(prev => {
       const newSelectedTags = prev.includes(tagId) 
         ? prev.filter(id => id !== tagId)
         : [...prev, tagId];
-      
-      loadProducts(newSelectedTags.length > 0 ? newSelectedTags : undefined);
       return newSelectedTags;
     });
   };
+
+  // Load products when tags change
+  useEffect(() => {
+    if (selectedTags.length > 0) {
+      loadProducts(selectedTags);
+    } else {
+      loadProducts();
+    }
+  }, [selectedTags]);
 
   // Clear all selected tags and reload all products
   const clearAllTags = () => {
@@ -75,14 +91,18 @@ export default function Home() {
     loadProducts();
   };
 
-  // Filter products based on search query only (tag filtering is done server-side)
+  // Filter products based on search query (tag filtering is done server-side)
   const filteredProducts = products.filter(product => {
     if (!searchQuery) return true;
-    return product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    
+    // Search in translated product name
+    const translatedName = getProductTranslation(product.id, product.name);
+    
+    return translatedName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  // Build completely dynamic category hierarchy from database
+  // Build completely dynamic category hierarchy from database with translations
   const buildCategoryHierarchy = useMemo(() => {
     if (!categories || categories.length === 0) return [];
 
@@ -113,16 +133,18 @@ export default function Home() {
       return {
         id: parentCat.id,
         name: parentCat.name,
-        displayName: parentCat.name,
+        // Use translated category name
+        displayName: getCategoryTranslation(parentCat.id, parentCat.name),
         categoryIds: allCategoryIds,
         childCategories: childCategories.map(child => ({
           id: child.id,
           name: child.name,
-          displayName: child.name
+          // Use translated category name for children too
+          displayName: getCategoryTranslation(child.id, child.name)
         }))
       };
     });
-  }, [categories]);
+  }, [categories, getCategoryTranslation]);
 
   // Group products by dynamic category hierarchy
   const productsToUse = searchQuery || selectedTags.length > 0 ? filteredProducts : products;
@@ -201,7 +223,10 @@ export default function Home() {
                         __html: tag.svgIcon.replace('<svg', '<svg width="16" height="16"') 
                       }}
                     />
-                    <span>{tag.name}</span>
+                    {/* Use translated tag name */}
+                    <span>
+                      {translationsLoading ? '...' : getTagTranslation(tag.id, tag.name)}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -212,7 +237,7 @@ export default function Home() {
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 pb-20 max-w-4xl mx-auto w-full">
           {/* Loading State */}
-          {loading && (
+          {(loading || translationsLoading) && (
             <div className="flex justify-center items-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
               <span className="ml-2 text-gray-500">{dict.common.loading}</span>
@@ -254,7 +279,7 @@ export default function Home() {
                             <div className="aspect-square bg-gray-100 relative flex items-center justify-center">
                               <Image 
                                 src={product?.imageUrl || '/placeholder-food.jpg'}
-                                alt={product.name}
+                                alt={getProductTranslation(product.id, product.name)}
                                 width={300}
                                 height={300}
                                 className="w-full h-full object-cover"
@@ -269,7 +294,7 @@ export default function Home() {
                               </div>
                             </div>
                             <div className="p-3">
-                              <h3 className="font-medium text-gray-800 line-clamp-1">{product.name}</h3>
+                              <h3 className="font-medium text-gray-800 line-clamp-1">{getProductTranslation(product.id, product.name)}</h3>
                               <p className="text-green-600 font-semibold">€{product.price.toFixed(2)}</p>
                               {product.description && (
                                 <p className="text-gray-500 text-xs mt-1 line-clamp-2">{product.description}</p>
@@ -348,7 +373,7 @@ export default function Home() {
                                 <div className="aspect-square bg-gray-100 relative flex items-center justify-center">
                                   <Image
                                     src={product?.imageUrl || '/placeholder-food.jpg'}
-                                    alt={product.name}
+                                    alt={getProductTranslation(product.id, product.name)}
                                     width={300}
                                     height={300}
                                     className="w-full h-full object-cover"
@@ -363,7 +388,7 @@ export default function Home() {
                                   </div>
                                 </div>
                                 <div className="p-3">
-                                  <h3 className="font-medium text-gray-800 line-clamp-1">{product.name}</h3>
+                                  <h3 className="font-medium text-gray-800 line-clamp-1">{getProductTranslation(product.id, product.name)}</h3>
                                   <p className="text-green-600 font-semibold">€{product.price.toFixed(2)}</p>
                                   {product.description && (
                                     <p className="text-gray-500 text-xs mt-1 line-clamp-2">{product.description}</p>
