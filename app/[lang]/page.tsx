@@ -26,6 +26,7 @@ export default function Home() {
   const {
     getCategoryTranslation,
     getProductTranslation,
+    getProductDescriptionTranslation,
     getTagTranslation,
     loading: translationsLoading
   } = useDatabaseTranslations(lang);
@@ -297,7 +298,7 @@ export default function Home() {
                               <h3 className="font-medium text-gray-800 line-clamp-1">{getProductTranslation(product.id, product.name)}</h3>
                               <p className="text-green-600 font-semibold">€{product.price.toFixed(2)}</p>
                               {product.description && (
-                                <p className="text-gray-500 text-xs mt-1 line-clamp-2">{product.description}</p>
+                                <p className="text-gray-500 text-xs mt-1 line-clamp-2">{getProductDescriptionTranslation(product.id, product.description)}</p>
                               )}
                               {product.tags && product.tags.length > 0 && (
                                 <div className="flex gap-1 mt-2 flex-wrap">
@@ -305,7 +306,7 @@ export default function Home() {
                                     <div 
                                       key={tag.id}
                                       className="w-4 h-4 flex-shrink-0"
-                                      title={tag.name}
+                                      title={getTagTranslation(tag.id, tag.name)}
                                       dangerouslySetInnerHTML={{ 
                                         __html: tag.svgIcon.replace('<svg', '<svg width="16" height="16"') 
                                       }}
@@ -391,7 +392,7 @@ export default function Home() {
                                   <h3 className="font-medium text-gray-800 line-clamp-1">{getProductTranslation(product.id, product.name)}</h3>
                                   <p className="text-green-600 font-semibold">€{product.price.toFixed(2)}</p>
                                   {product.description && (
-                                    <p className="text-gray-500 text-xs mt-1 line-clamp-2">{product.description}</p>
+                                    <p className="text-gray-500 text-xs mt-1 line-clamp-2">{getProductDescriptionTranslation(product.id, product.description)}</p>
                                   )}
                                   {product.tags && product.tags.length > 0 && (
                                     <div className="flex gap-1 mt-2 flex-wrap">
@@ -399,7 +400,7 @@ export default function Home() {
                                         <div 
                                           key={tag.id}
                                           className="w-4 h-4 flex-shrink-0"
-                                          title={tag.name}
+                                          title={getTagTranslation(tag.id, tag.name)}
                                           dangerouslySetInnerHTML={{ 
                                             __html: tag.svgIcon.replace('<svg', '<svg width="16" height="16"') 
                                           }}

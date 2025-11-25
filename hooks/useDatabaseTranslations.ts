@@ -7,6 +7,7 @@ import { fetchAllTranslations } from '@/lib/services/translation-service';
 interface Translations {
   categories: Record<number, string>;
   products: Record<number, string>;
+  productDescriptions: Record<number, string>;
   tags: Record<number, string>;
 }
 
@@ -18,6 +19,7 @@ export function useDatabaseTranslations(locale: Locale) {
   const [translations, setTranslations] = useState<Translations>({
     categories: {},
     products: {},
+    productDescriptions: {},
     tags: {},
   });
   const [loading, setLoading] = useState(true);
@@ -26,7 +28,7 @@ export function useDatabaseTranslations(locale: Locale) {
   useEffect(() => {
     // If English, no need to fetch (use original names)
     if (locale === 'en') {
-      setTranslations({ categories: {}, products: {}, tags: {} });
+      setTranslations({ categories: {}, products: {}, productDescriptions: {}, tags: {} });
       setLoading(false);
       return;
     }
@@ -74,12 +76,22 @@ export function useDatabaseTranslations(locale: Locale) {
     return translations.tags[tagId] || fallbackName;
   };
 
+  /**
+   * Get translated product description
+   * Falls back to original description if translation not found
+   */
+  const getProductDescriptionTranslation = (productId: number, fallbackDescription: string): string => {
+    if (locale === 'en') return fallbackDescription;
+    return translations.productDescriptions[productId] || fallbackDescription;
+  };
+
   return {
     translations,
     loading,
     error,
     getCategoryTranslation,
     getProductTranslation,
+    getProductDescriptionTranslation,
     getTagTranslation,
   };
 }

@@ -13,11 +13,14 @@ import { createOrderItem } from "@/app/actions/orderItem";
 import { useState } from "react";
 import { OrderItem } from "@/lib/interfaces/order";
 import Image from "next/image";
+import { useDatabaseTranslations } from "@/hooks/useDatabaseTranslations";
 
 export default function CartPage() {
   const params = useParams();
   const lang = (params.lang as Locale) || 'en';
   const dict = getDictionarySync(lang);
+
+  const { getProductTranslation } = useDatabaseTranslations(lang);
   
   const { cartItems, updateQuantity, removeFromCart, getSubtotal, clearCart } = useCart();
   const { orders, orderItems, refreshOrders } = useOrders();
@@ -143,7 +146,7 @@ export default function CartPage() {
                           {item.product.imageUrl ? (
                             <Image 
                               src={item.product.imageUrl} 
-                              alt={item.product.name}
+                              alt={getProductTranslation(item.product.id, item.product.name)} 
                               width={64}
                               height={64}
                               className="w-full h-full object-cover"
@@ -160,7 +163,7 @@ export default function CartPage() {
                         </div>
                         
                         <div className="flex-1">
-                          <h3 className="font-medium text-gray-800">{item.product.name}</h3>
+                          <h3 className="font-medium text-gray-800">{getProductTranslation(item.product.id, item.product.name)}</h3>
                           <p className="text-green-600 font-semibold">€{item.product.price.toFixed(2)}</p>
                         </div>
                         
@@ -288,7 +291,7 @@ export default function CartPage() {
                                     {(orderItem as OrderItem).product?.imageUrl ? (
                                       <Image 
                                         src={(orderItem as OrderItem).product.imageUrl} 
-                                        alt={(orderItem as OrderItem).product.name || 'Product'}
+                                        alt={getProductTranslation(orderItem.productId, (orderItem as OrderItem).product?.name || 'Product')}
                                         width={64}
                                         height={64}
                                         className="w-full h-full object-cover"
@@ -303,7 +306,7 @@ export default function CartPage() {
                                   </div>
                                   <div>
                                     <h4 className="font-medium text-gray-800">
-                                      {(orderItem as OrderItem).product?.name || `Product ID: ${orderItem.productId}`}
+                                      {getProductTranslation(orderItem.productId, (orderItem as OrderItem).product?.name || `Product ID: ${orderItem.productId}`)}
                                     </h4>
                                     <p className="text-sm text-gray-600">€{(orderItem.price || 0).toFixed(2)}</p>
                                   </div>

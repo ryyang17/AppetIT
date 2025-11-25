@@ -10,6 +10,7 @@ const translationCache = new Map<string, Record<number, string>>();
 export async function fetchAllTranslations(language: 'en' | 'nl'): Promise<{
   categories: Record<number, string>;
   products: Record<number, string>;
+  productDescriptions: Record<number, string>;
   tags: Record<number, string>;
 }> {
   const cacheKey = `all_${language}`;
@@ -36,6 +37,7 @@ export async function fetchAllTranslations(language: 'en' | 'nl'): Promise<{
     const result = {
       categories: {} as Record<number, string>,
       products: {} as Record<number, string>,
+      productDescriptions: {} as Record<number, string>,
       tags: {} as Record<number, string>,
     };
 
@@ -51,6 +53,8 @@ export async function fetchAllTranslations(language: 'en' | 'nl'): Promise<{
         result.categories[item.entityId] = item.translation;
       } else if (item.entityType === 'product') {
         result.products[item.entityId] = item.translation;
+      } else if (item.entityType === 'product_description') {
+        result.productDescriptions[item.entityId] = item.translation;
       } else if (item.entityType === 'tag') {
         result.tags[item.entityId] = item.translation;
       }
@@ -63,6 +67,7 @@ export async function fetchAllTranslations(language: 'en' | 'nl'): Promise<{
     return {
       categories: {},
       products: {},
+      productDescriptions: {},
       tags: {},
     };
   }
