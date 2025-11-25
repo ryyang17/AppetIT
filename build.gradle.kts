@@ -26,6 +26,7 @@ dependencies {
     // --- Core Spring Boot + Kotlin ---
 	implementation(libs.spring.boot.starter)
     implementation(libs.spring.boot.starter.webflux)
+    implementation(libs.spring.boot.starter.rsocket)
 	implementation(libs.kotlin.reflect)
 	// --- Hot-reload ---
 	developmentOnly(libs.spring.boot.devtools)
