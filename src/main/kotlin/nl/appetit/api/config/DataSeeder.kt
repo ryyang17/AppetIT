@@ -405,6 +405,23 @@ class DataSeeder(
                 "Selectie van lokale speciaalbieren"
             )
         )
+        // Tag (allergen) translations
+        val tagTranslations = mapOf(
+            "Celery" to "Selderij",
+            "Mustard" to "Mosterd",
+            "Sesame seeds" to "Sesamzaad",
+            "Sulphur dioxide and sulphites" to "Zwaveldioxide en sulfieten",
+            "Lupin" to "Lupine",
+            "Molluscs" to "Weekdieren",
+            "Cereals containing gluten" to "Gluten bevattende granen",
+            "Crustaceans" to "Schaaldieren",
+            "Eggs" to "Eieren",
+            "Fish" to "Vis",
+            "Peanuts" to "Pinda's",
+            "Soybeans" to "Soja",
+            "Milk" to "Melk",
+            "Nuts" to "Noten"
+    )
         
         val translations = mutableListOf<TranslationEntity>()
         
@@ -426,6 +443,28 @@ class DataSeeder(
                 ))
             }
         }
+
+        // Tag translations
+        tagTranslations.forEach { (englishName, dutchName) ->
+            val tag = tagR2dbcRepository.findAll()
+                .filter { it.name == englishName }
+                .blockFirst()
+            
+            if (tag != null && tag.id != null) {
+                translations.add(TranslationEntity(
+                    entityType = "tag",
+                    entityId = tag.id!!.toLong(),
+                    language = "en",
+                    translation = englishName
+                ))
+                translations.add(TranslationEntity(
+                    entityType = "tag",
+                    entityId = tag.id!!.toLong(),
+                    language = "nl",
+                    translation = dutchName
+                ))
+        }
+    }
         
         // Product name + description translations
         productTranslations.forEach { translation ->
