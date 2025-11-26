@@ -1,6 +1,7 @@
 package nl.appetit.api.data.mapper
 
 import nl.appetit.api.logic.model.Table
+import java.time.Instant
 
 object TableMapper {
     fun toModel(entity: nl.appetit.api.data.entity.TableEntity) = Table(
@@ -16,6 +17,8 @@ object TableMapper {
         restaurantId = model.restaurantId,
         tableNumber = model.tableNumber,
         capacity = model.capacity,
-        isActive = model.isActive
+        isActive = model.isActive,
+        createdAt = Instant.now(),
+        updatedAt = Instant.now()
     )
 }

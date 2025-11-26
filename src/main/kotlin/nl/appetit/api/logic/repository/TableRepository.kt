@@ -7,5 +7,8 @@ import reactor.core.publisher.Mono
 interface TableRepository {
     fun findById(id: Int): Mono<Table>
     fun findAll(): Flux<Table>
+    fun save(table: Table): Mono<Table>
+    fun deleteById(id: Int): Mono<Void>
+    fun deleteAll(): Mono<Void>
+    fun findAllByRestaurantId(restaurantId: Int): Flux<Table>
 }
-

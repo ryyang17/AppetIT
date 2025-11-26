@@ -10,14 +10,27 @@ import reactor.core.publisher.Mono
 
 @Component
 class TableRepositoryImpl(
-    private val tableR2dbcRepository: TableR2dbcRepository
+    private val db: TableR2dbcRepository
 ) : TableRepository {
-    override fun findById(id: Int): Mono<Table> =
-        tableR2dbcRepository.findById(id)
-            .map(TableMapper::toModel)
-
     override fun findAll(): Flux<Table> =
-        tableR2dbcRepository.findAll()
+        db.findAll()
             .map(TableMapper::toModel)
-}
 
+    override fun findById(id: Int): Mono<Table> =
+        db.findById(id)
+            .map(TableMapper::toModel)
+
+    override fun save(table: Table): Mono<Table> =
+        db.save(TableMapper.toEntity(table))
+            .map(TableMapper::toModel)
+
+    override fun findAllByRestaurantId(restaurantId: Int): Flux<Table> =
+        db.findAllByRestaurantId(restaurantId)
+            .map(TableMapper::toModel)
+
+    override fun deleteById(id: Int): Mono<Void> =
+        db.deleteById(id)
+
+    override fun deleteAll(): Mono<Void> =
+        db.deleteAll()
+}
