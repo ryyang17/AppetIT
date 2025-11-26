@@ -1,7 +1,7 @@
 package nl.appetit.api.presentation.controller.rsocket
 
 import nl.appetit.api.logic.service.BarUpdateService
-import org.springframework.messaging.handler.annotation.DestinationVariable
+import nl.appetit.api.logic.service.Payload
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.stereotype.Controller
 import reactor.core.publisher.Flux
@@ -11,6 +11,6 @@ class BarRSocketController(
     private val barUpdateService: BarUpdateService
 ) {
     @MessageMapping("updates.bar")
-    fun streamUpdate(): Flux<String> =
+    fun streamUpdate(): Flux<Payload> =
         barUpdateService.subscribe("1")
 }

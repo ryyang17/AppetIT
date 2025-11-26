@@ -9,11 +9,16 @@ import reactor.core.publisher.Mono
 
 @Service
 class OrderService(
-    private val db: OrderRepository
+    private val db: OrderRepository,
+    private val barUpdateService: BarUpdateService
 ) {
     fun findAll(): Flux<Order> = db.findAll()
 
-    fun save(order: Order): Mono<Order> = db.save(order)
+    fun save(order: Order): Mono<Order> =
+        db.save(order)
+            .doOnNext { savedOrder ->
+                barUpdateService.pushUpdate("1", "${savedOrder.id}")
+            }
 
     fun deleteById(id: Int): Mono<Void> = db.deleteById(id)
 

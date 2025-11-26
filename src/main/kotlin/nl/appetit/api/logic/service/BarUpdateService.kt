@@ -5,11 +5,15 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
 import java.util.concurrent.ConcurrentHashMap
 
+data class Payload(
+    val message: String
+)
+
 @Service
 class BarUpdateService {
-    private val sinks: MutableMap<String, FluxSink<String>> = ConcurrentHashMap()
+    private val sinks: MutableMap<String, FluxSink<Payload>> = ConcurrentHashMap()
 
-    fun subscribe(restaurantId: String): Flux<String> {
+    fun subscribe(restaurantId: String): Flux<Payload> {
         return Flux.create { sink ->
             sinks[restaurantId] = sink
         }.publish().autoConnect()
@@ -17,6 +21,8 @@ class BarUpdateService {
 
     // Server pushes updates
     fun pushUpdate(restaurantId: String, message: String) {
-        sinks[restaurantId]?.next(message)
+        val payload = Payload(message)
+
+        sinks[restaurantId]?.next(payload)
     }
 }
