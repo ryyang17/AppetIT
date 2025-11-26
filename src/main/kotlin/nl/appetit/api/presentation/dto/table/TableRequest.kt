@@ -19,5 +19,5 @@ data class TableRequest(
     val capacity: Int? = null,
 
     @JsonProperty("isActive")
-    val isActive: Boolean = true
+    val isActive: Boolean
 )
