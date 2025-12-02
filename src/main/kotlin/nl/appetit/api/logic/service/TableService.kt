@@ -22,8 +22,6 @@ class TableService(
     fun deleteById(id: Int): Mono<Void> =
         tableRepository.deleteById(id)
 
-    fun deleteAll(): Mono<Void> =
-        tableRepository.deleteAll()
 
     fun update(id: Int, newTable: Table): Mono<Table> =
         tableRepository.findById(id)

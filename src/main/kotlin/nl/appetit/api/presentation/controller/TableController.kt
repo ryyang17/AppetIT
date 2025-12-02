@@ -54,8 +54,4 @@ class TableController(
         return tableService.deleteById(id)
     }
 
-    @DeleteMapping
-    fun deleteAll(): Mono<Void> {
-        return tableService.deleteAll()
-    }
 }

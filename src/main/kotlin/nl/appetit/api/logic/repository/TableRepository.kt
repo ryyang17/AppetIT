@@ -9,6 +9,5 @@ interface TableRepository {
     fun findAll(): Flux<Table>
     fun save(table: Table): Mono<Table>
     fun deleteById(id: Int): Mono<Void>
-    fun deleteAll(): Mono<Void>
     fun findAllByRestaurantId(restaurantId: Int): Flux<Table>
 }

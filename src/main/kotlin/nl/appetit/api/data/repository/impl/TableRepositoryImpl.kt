@@ -30,7 +30,4 @@ class TableRepositoryImpl(
 
     override fun deleteById(id: Int): Mono<Void> =
         db.deleteById(id)
-
-    override fun deleteAll(): Mono<Void> =
-        db.deleteAll()
 }

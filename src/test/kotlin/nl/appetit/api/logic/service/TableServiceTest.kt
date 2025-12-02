@@ -112,21 +112,6 @@ class TableServiceTest {
     }
 
     @Test
-    fun `deleteAll should delete all tables`() {
-        // Arrange
-        whenever(tableRepository.deleteAll()).thenReturn(Mono.empty())
-
-        // Act
-        val result = tableService.deleteAll()
-
-        // Assert
-        StepVerifier.create(result)
-            .verifyComplete()
-
-        verify(tableRepository, times(1)).deleteAll()
-    }
-
-    @Test
     fun `update should update existing table`() {
         // Arrange
         val tableId = 1
