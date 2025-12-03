@@ -137,8 +137,8 @@ export default function CartPage() {
                       ) : (
                         <div className="space-y-3">
                           {/* Dynamic Cart Items */}
-                          {cartItems.map((item) => (
-                            <div key={item.product.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                          {cartItems.map((item, index) => (
+                            <div key={`cartItem-${index}`} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
                               <div className="flex items-center space-x-3">
                                 {/* Product Image */}
                                 <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
@@ -240,7 +240,7 @@ export default function CartPage() {
                       ) : (
                         orders
                           .sort((a, b) => b.id - a.id) // Sort newest first
-                          .map((order) => {
+                          .map((order, orderIndex) => {
                             const items = groupedOrderItems[order.id] || [];
                             const orderTotal = items.reduce((sum, item) => {
                               // Use the enriched price from the hook
@@ -250,7 +250,7 @@ export default function CartPage() {
                             }, 0);
                             
                             return (
-                              <div key={order.id} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                              <div key={`orderIdx-${orderIndex}`} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                                 {/* Order Header */}
                                 <div className="bg-green-50 p-4 border-b border-green-100">
                                   <div className="flex justify-between items-start">
@@ -287,8 +287,11 @@ export default function CartPage() {
                                 {/* Order Items */}
                                 <div className="p-4">
                                   <div className="space-y-3">
-                                    {items.map((orderItem) => (
-                                      <div key={orderItem.id} className="flex items-center justify-between py-2">
+                                    {items.map((orderItem, itemIndex) => {
+                                      // Use ONLY array indices for guaranteed uniqueness - never use data IDs which can be duplicated
+                                      const uniqueKey = `orderIdx-${orderIndex}-itemIdx-${itemIndex}`;
+                                      return (
+                                      <div key={uniqueKey} className="flex items-center justify-between py-2">
                                         <div className="flex items-center space-x-3">
                                           <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
                                             {(orderItem as OrderItem).product?.imageUrl ? (
@@ -320,7 +323,8 @@ export default function CartPage() {
                                           </div>
                                         </div>
                                       </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               </div>

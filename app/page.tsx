@@ -294,7 +294,7 @@ export default function Home() {
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                       {filteredProducts.map((product) => (
                         <Card 
-                          key={product.id} 
+                          key={`search-${product.id}`} 
                           className="overflow-hidden cursor-pointer transition-transform hover:scale-105"
                           onClick={() => handleProductClick(product)}
                         >
@@ -327,7 +327,7 @@ export default function Home() {
                                 <div className="flex gap-1 mt-2 flex-wrap">
                                   {product.tags.slice(0, 3).map((tag) => (
                                     <div 
-                                      key={tag.id}
+                                      key={`search-product-${product.id}-tag-${tag.id}`}
                                       className="w-4 h-4 flex-shrink-0"
                                       title={tag.name}
                                       dangerouslySetInnerHTML={{ 
@@ -390,7 +390,7 @@ export default function Home() {
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
                           {category.products.map((product: Product) => (
                             <Card 
-                              key={product.id} 
+                              key={`category-${category.id}-product-${product.id}`} 
                               className="overflow-hidden cursor-pointer transition-transform hover:scale-105"
                               onClick={() => handleProductClick(product)}
                             >
@@ -423,7 +423,7 @@ export default function Home() {
                                     <div className="flex gap-1 mt-2 flex-wrap">
                                       {product.tags.slice(0, 3).map((tag: Tag) => (
                                         <div 
-                                          key={tag.id}
+                                          key={`category-${category.id}-product-${product.id}-tag-${tag.id}`}
                                           className="w-4 h-4 flex-shrink-0"
                                           title={tag.name}
                                           dangerouslySetInnerHTML={{ 

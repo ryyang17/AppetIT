@@ -139,8 +139,8 @@ export default function CartPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {cartItems.map((item) => (
-                    <div key={item.product.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                  {cartItems.map((item, index) => (
+                    <div key={`cartItem-${index}`} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
                       <div className="flex items-center space-x-3">
                         <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
                           {item.product.imageUrl ? (
@@ -235,7 +235,7 @@ export default function CartPage() {
               ) : (
                 orders
                   .sort((a, b) => b.id - a.id)
-                  .map((order) => {
+                  .map((order, orderIndex) => {
                     const items = groupedOrderItems[order.id] || [];
                     const orderTotal = items.reduce((sum, item) => {
                       const itemPrice = item.price || 0;
@@ -244,7 +244,7 @@ export default function CartPage() {
                     }, 0);
                     
                     return (
-                      <div key={order.id} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                      <div key={`orderIdx-${orderIndex}`} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                         <div className="bg-green-50 p-4 border-b border-green-100">
                           <div className="flex justify-between items-start">
                             <div>
@@ -284,8 +284,8 @@ export default function CartPage() {
                         
                         <div className="p-4">
                           <div className="space-y-3">
-                            {items.map((orderItem) => (
-                              <div key={orderItem.id} className="flex items-center justify-between py-2">
+                            {items.map((orderItem, itemIndex) => (
+                              <div key={`orderIdx-${orderIndex}-itemIdx-${itemIndex}`} className="flex items-center justify-between py-2">
                                 <div className="flex items-center space-x-3">
                                   <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
                                     {(orderItem as OrderItem).product?.imageUrl ? (
