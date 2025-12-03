@@ -1,13 +1,18 @@
 package nl.appetit.api.config
 
-import nl.appetit.api.config.AllergenSvgIcons
 import nl.appetit.api.data.entity.CategoryEntity
 import nl.appetit.api.data.entity.ProductEntity
 import nl.appetit.api.data.entity.TagEntity
+import nl.appetit.api.data.entity.TranslationEntity
+import nl.appetit.api.data.entity.TableEntity
+import nl.appetit.api.data.entity.RestaurantEntity
 import nl.appetit.api.data.repository.CategoryR2dbcRepository
 import nl.appetit.api.data.repository.ProductR2dbcRepository
 import nl.appetit.api.data.repository.TagR2dbcRepository
 import nl.appetit.api.data.repository.ProductTagR2dbcRepository
+import nl.appetit.api.data.repository.TranslationR2dbcRepository
+import nl.appetit.api.data.repository.RestaurantR2dbcRepository
+import nl.appetit.api.data.repository.TableR2dbcRepository
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
@@ -20,7 +25,10 @@ class DataSeeder(
     private val categoryR2dbcRepository: CategoryR2dbcRepository,
     private val productR2dbcRepository: ProductR2dbcRepository,
     private val tagR2dbcRepository: TagR2dbcRepository,
-    private val productTagR2dbcRepository: ProductTagR2dbcRepository
+    private val productTagR2dbcRepository: ProductTagR2dbcRepository,
+    private val translationR2dbcRepository: TranslationR2dbcRepository,
+    private val restaurantR2dbcRepository: RestaurantR2dbcRepository,
+    private val tableR2dbcRepository: TableR2dbcRepository
 ) : CommandLineRunner {
 
     private val logger = LoggerFactory.getLogger(DataSeeder::class.java)
@@ -33,6 +41,8 @@ class DataSeeder(
         productR2dbcRepository.deleteAll().block()
         categoryR2dbcRepository.deleteAll().block()
         tagR2dbcRepository.deleteAll().block()
+        translationR2dbcRepository.deleteAll().block()
+        tableR2dbcRepository.deleteAll().block()
         logger.info("Data deleted successfully")
         
         // Seed categories with hierarchy
@@ -46,7 +56,13 @@ class DataSeeder(
         
         // Associate allergens with products
         seedProductAllergens(productMap, tagMap)
-        
+
+        // Seed translations
+        seedTranslations(categoryMap, productMap)
+
+        // Seed tables (1..10) for each restaurant (create a demo restaurant if none exist)
+        seedTables()
+
         logger.info("Data seeding completed!")
     }
 
@@ -56,8 +72,9 @@ class DataSeeder(
         
         fun saveCategory(name: String, parentId: Long? = null, order: Int): Long {
             val category = categoryR2dbcRepository.save(CategoryEntity(name = name, parentId = parentId, order = order)).block()!!
-            savedCategories[name] = category.id!!
-            return category.id!!
+            val id = category.id ?: throw IllegalStateException("Category id is null after save for $name")
+            savedCategories[name] = id
+            return id
         }
         
         // Root categories
@@ -179,6 +196,314 @@ class DataSeeder(
         return savedProducts.associate { it.name to (it.id ?: 0) }
     }
 
+    private fun seedTranslations(categoryMap: Map<String, Long>, productMap: Map<String, Int>) {
+        logger.info("Seeding translations...")
+        
+        // Category translations
+        val categoryTranslations = mapOf(
+            "Food" to "Eten",
+            "Beverages" to "Dranken",
+            "Appetizers" to "Voorgerechten",
+            "Main Courses" to "Hoofdgerechten",
+            "Salads" to "Salades",
+            "Desserts" to "Nagerechten",
+            "Bread & Starters" to "Brood & Voorgerechten",
+            "Small Plates" to "Kleine Gerechten",
+            "Meat Dishes" to "Vleesgerechten",
+            "Seafood" to "Zeevruchten",
+            "Pasta" to "Pasta",
+            "Vegetarian" to "Vegetarisch",
+            "Hot Drinks" to "Warme Dranken",
+            "Cold Drinks" to "Koude Dranken",
+            "Alcoholic" to "Alcoholisch",
+            "Cakes" to "Taarten",
+            "Ice Creams" to "IJsjes",
+            "Pastries" to "Gebak",
+            "Green Salads" to "Groene Salades",
+            "Fruit Salads" to "Fruitsalades",
+            "Protein Salads" to "Proteïne Salades"
+        )
+        
+        // Product name + description translations
+        data class ProductTranslation(
+            val englishName: String,
+            val dutchName: String,
+            val englishDescription: String,
+            val dutchDescription: String
+        )
+        
+        val productTranslations = listOf(
+            // Bread & Starters
+            ProductTranslation(
+                "Garlic Bread", 
+                "Knoflookbrood",
+                "Fresh baked bread with garlic butter and herbs",
+                "Vers gebakken brood met knoflookboter en kruiden"
+            ),
+            ProductTranslation(
+                "Bruschetta",
+                "Bruschetta", 
+                "Toasted bread topped with tomatoes, basil, and mozzarella",
+                "Geroosterd brood met tomaten, basilicum en mozzarella"
+            ),
+            
+            // Small Plates
+            ProductTranslation(
+                "Chicken Wings",
+                "Kippenvleugels",
+                "Crispy chicken wings with your choice of sauce",
+                "Krokante kippenvleugels met saus naar keuze"
+            ),
+            
+            // Meat Dishes
+            ProductTranslation(
+                "Beef Steak",
+                "Biefstuk",
+                "Premium ribeye steak cooked to your preference",
+                "Premium ribeye biefstuk bereid naar wens"
+            ),
+            ProductTranslation(
+                "Chicken Parmesan",
+                "Kip Parmezaan",
+                "Breaded chicken breast with marinara sauce and mozzarella",
+                "Gepaneerde kipfilet met tomatensaus en mozzarella"
+            ),
+            
+            // Seafood
+            ProductTranslation(
+                "Grilled Salmon",
+                "Gegrilde Zalm",
+                "Fresh Atlantic salmon grilled to perfection with lemon butter",
+                "Verse Atlantische zalm gegrild met citroenboter"
+            ),
+            ProductTranslation(
+                "Shrimp Scampi",
+                "Scampi",
+                "Tender shrimp in white wine and garlic sauce",
+                "Malse garnalen in witte wijn en knoflooksaus"
+            ),
+            
+            // Pasta
+            ProductTranslation(
+                "Vegetarian Pasta",
+                "Vegetarische Pasta",
+                "Penne pasta with seasonal vegetables in a light cream sauce",
+                "Penne pasta met seizoensgroenten in lichte roomsaus"
+            ),
+            ProductTranslation(
+                "Spaghetti Bolognese",
+                "Spaghetti Bolognese",
+                "Classic spaghetti with traditional meat sauce",
+                "Klassieke spaghetti met traditionele vleessaus"
+            ),
+            
+            // Vegetarian
+            ProductTranslation(
+                "Veggie Burger",
+                "Veggie Burger",
+                "House-made veggie patty with fresh toppings",
+                "Huisgemaakte veggie burger met verse toppings"
+            ),
+            
+            // Salads
+            ProductTranslation(
+                "Caesar Salad",
+                "Caesar Salade",
+                "Fresh romaine lettuce with Caesar dressing and croutons",
+                "Verse romaine sla met Caesar dressing en croutons"
+            ),
+            ProductTranslation(
+                "Greek Salad",
+                "Griekse Salade",
+                "Mixed greens with feta cheese, olives, and Greek dressing",
+                "Gemengde sla met fetakaas, olijven en Griekse dressing"
+            ),
+            ProductTranslation(
+                "Caprese Salad",
+                "Caprese Salade",
+                "Fresh mozzarella, tomatoes, basil with balsamic glaze",
+                "Verse mozzarella, tomaten, basilicum met balsamico glazuur"
+            ),
+            
+            // Desserts
+            ProductTranslation(
+                "Chocolate Cake",
+                "Chocoladetaart",
+                "Rich chocolate cake with chocolate ganache",
+                "Rijke chocoladetaart met chocolade ganache"
+            ),
+            ProductTranslation(
+                "Tiramisu",
+                "Tiramisu",
+                "Classic Italian dessert with coffee and mascarpone",
+                "Klassiek Italiaans dessert met koffie en mascarpone"
+            ),
+            ProductTranslation(
+                "Ice Cream Sundae",
+                "IJscoupe",
+                "Vanilla ice cream with chocolate sauce and whipped cream",
+                "Vanille-ijs met chocoladesaus en slagroom"
+            ),
+            
+            // Hot Drinks
+            ProductTranslation(
+                "Coffee",
+                "Koffie",
+                "Freshly brewed espresso-based coffee",
+                "Vers gezette espresso-gebaseerde koffie"
+            ),
+            ProductTranslation(
+                "Cappuccino",
+                "Cappuccino",
+                "Espresso with steamed milk and foam",
+                "Espresso met gestoomde melk en melkschuim"
+            ),
+            ProductTranslation(
+                "Hot Chocolate",
+                "Warme Chocolademelk",
+                "Creamy hot chocolate with whipped cream",
+                "Romige warme chocolademelk met slagroom"
+            ),
+            
+            // Cold Drinks
+            ProductTranslation(
+                "Fresh Orange Juice",
+                "Vers Sinaasappelsap",
+                "Freshly squeezed orange juice",
+                "Vers geperst sinaasappelsap"
+            ),
+            ProductTranslation(
+                "Sparkling Water",
+                "Bruisend Water",
+                "Refreshing sparkling water",
+                "Verfrissend bruisend water"
+            ),
+            ProductTranslation(
+                "Iced Tea",
+                "IJsthee",
+                "Chilled iced tea with fresh lemon",
+                "Gekoelde ijsthee met verse citroen"
+            ),
+            
+            // Alcoholic
+            ProductTranslation(
+                "House Red Wine",
+                "Huiswijn Rood",
+                "Selection of premium red wine by the glass",
+                "Selectie van premium rode wijn per glas"
+            ),
+            ProductTranslation(
+                "House White Wine",
+                "Huiswijn Wit",
+                "Selection of premium white wine by the glass",
+                "Selectie van premium witte wijn per glas"
+            ),
+            ProductTranslation(
+                "Craft Beer",
+                "Speciaal Bier",
+                "Selection of local craft beers",
+                "Selectie van lokale speciaalbieren"
+            )
+        )
+        // Tag (allergen) translations
+        val tagTranslations = mapOf(
+            "Celery" to "Selderij",
+            "Mustard" to "Mosterd",
+            "Sesame seeds" to "Sesamzaad",
+            "Sulphur dioxide and sulphites" to "Zwaveldioxide en sulfieten",
+            "Lupin" to "Lupine",
+            "Molluscs" to "Weekdieren",
+            "Cereals containing gluten" to "Gluten bevattende granen",
+            "Crustaceans" to "Schaaldieren",
+            "Eggs" to "Eieren",
+            "Fish" to "Vis",
+            "Peanuts" to "Pinda's",
+            "Soybeans" to "Soja",
+            "Milk" to "Melk",
+            "Nuts" to "Noten"
+    )
+        
+        val translations = mutableListOf<TranslationEntity>()
+        
+        // Category translations
+        categoryTranslations.forEach { (englishName, dutchName) ->
+            val categoryId = categoryMap[englishName]
+            if (categoryId != null) {
+                translations.add(TranslationEntity(
+                    entityType = "category",
+                    entityId = categoryId,
+                    language = "en",
+                    translation = englishName
+                ))
+                translations.add(TranslationEntity(
+                    entityType = "category",
+                    entityId = categoryId,
+                    language = "nl",
+                    translation = dutchName
+                ))
+            }
+        }
+
+        // Tag translations
+        tagTranslations.forEach { (englishName, dutchName) ->
+            val tag = tagR2dbcRepository.findAll()
+                .filter { it.name == englishName }
+                .blockFirst()
+            
+            if (tag != null && tag.id != null) {
+                translations.add(TranslationEntity(
+                    entityType = "tag",
+                    entityId = tag.id!!.toLong(),
+                    language = "en",
+                    translation = englishName
+                ))
+                translations.add(TranslationEntity(
+                    entityType = "tag",
+                    entityId = tag.id!!.toLong(),
+                    language = "nl",
+                    translation = dutchName
+                ))
+        }
+    }
+        
+        // Product name + description translations
+        productTranslations.forEach { translation ->
+            val productId = productMap[translation.englishName]
+            if (productId != null && productId > 0) {
+                // Name translations
+                translations.add(TranslationEntity(
+                    entityType = "product",
+                    entityId = productId.toLong(),
+                    language = "en",
+                    translation = translation.englishName
+                ))
+                translations.add(TranslationEntity(
+                    entityType = "product",
+                    entityId = productId.toLong(),
+                    language = "nl",
+                    translation = translation.dutchName
+                ))
+                
+                // Description translations
+                translations.add(TranslationEntity(
+                    entityType = "product_description",
+                    entityId = productId.toLong(),
+                    language = "en",
+                    translation = translation.englishDescription
+                ))
+                translations.add(TranslationEntity(
+                    entityType = "product_description",
+                    entityId = productId.toLong(),
+                    language = "nl",
+                    translation = translation.dutchDescription
+                ))
+            }
+        }
+        
+        translationR2dbcRepository.saveAll(translations).collectList().block()
+        logger.info("${translations.size} translations seeded successfully")
+    }
+
     private fun seedAllergens(): Map<String, Int> {
         logger.info("Seeding EU 14 allergen tags...")
         
@@ -279,5 +604,31 @@ class DataSeeder(
         }
         
         logger.info("$associationsCount allergen-product associations created successfully")
+    }
+
+    private fun seedTables() {
+        logger.info("Seeding tables (1..10) for each restaurant...")
+
+        val restaurants = restaurantR2dbcRepository.findAll().collectList().block() ?: emptyList()
+        var restaurantList = restaurants
+
+        if (restaurantList.isEmpty()) {
+            // create a default demo restaurant to attach tables to
+            val demo = RestaurantEntity(name = "Demo Restaurant", address = "Demo Address", phone = "", email = "", isActive = true)
+            val savedDemo = restaurantR2dbcRepository.save(demo).block()!!
+            restaurantList = listOf(savedDemo)
+            logger.info("No restaurants found. Created demo restaurant with id=${savedDemo.id}")
+        }
+
+        val tables = mutableListOf<TableEntity>()
+        restaurantList.forEach { rest ->
+            val rid = rest.id ?: return@forEach
+            for (i in 1..10) {
+                tables.add(TableEntity(restaurantId = rid, tableNumber = i, capacity = 4))
+            }
+        }
+
+        val savedTables = tableR2dbcRepository.saveAll(tables).collectList().block()!!
+        logger.info("${savedTables.size} tables seeded successfully for ${restaurantList.size} restaurant(s)")
     }
 }

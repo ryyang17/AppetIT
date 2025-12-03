@@ -1,0 +1,57 @@
+@startuml Product Components
+!include <C4/C4_Component>
+
+top to bottom direction
+
+title AppetIT API – Product flow across presentation / logic / data
+
+System_Boundary(appetit, "AppetIT System") {
+
+  ' ===== PRESENTATION (presentation/) =====
+  Container_Boundary(presentation, "presentation", "Spring WebFlux", "API layer") {
+    Component(prod_controller, "ProductController", "REST controller", "Exposes reactive HTTP endpoints for products (list, filter, create, update, delete).")
+    Component(prod_req, "ProductRequest", "DTO", "Incoming product payload from clients.")
+    Component(prod_res, "ProductResponse", "DTO", "Outgoing product representation including tags.")
+  }
+
+  ' ===== BUSINESS LOGIC (logic/) =====
+  Container_Boundary(logic, "logic", "Kotlin services + domain models", "Domain / application layer") {
+    Component(prod_service, "ProductService", "Service", "Implements product use‑cases: listing, filtering, creating, updating and deleting products.")
+    Component(prod_model, "Product", "Domain model", "Core domain representation of a product.")
+    Component(prod_repo_port, "ProductRepository", "Repository port", "Abstraction used by ProductService for persistence.")
+    Component(prod_tag_repo_port, "ProductTagRepository", "Repository port", "Provides product‑tag based filtering (exclude products with certain tags).")
+  }
+
+  ' ===== DATA ACCESS (data/) =====
+  Container_Boundary(data, "data", "Spring Data R2DBC + mappers", "Persistence layer") {
+    Component(prod_repo_impl, "ProductRepositoryImpl", "Repository adapter", "Implements ProductRepository using ProductR2dbcRepository and ProductMapper.")
+    Component(prod_r2dbc_repo, "ProductR2dbcRepository", "Spring Data R2DBC repository", "Reactive CRUD and category queries on the product table.")
+    Component(prod_entity, "ProductEntity", "R2DBC entity", "Database row for the `product` table.")
+    Component(prod_mapper, "ProductMapper", "Data mapper", "Maps between ProductEntity and the Product domain model.")
+  }
+}
+
+ContainerDb(db, "PostgreSQL", "PostgreSQL (R2DBC)", "Stores product data and related tables.")
+
+' ===== RELATIONSHIPS (product flow) =====
+Rel(prod_controller, prod_req, "receives")
+Rel(prod_controller, prod_service, "invokes", "Reactive calls")
+Rel(prod_service, prod_model, "uses")
+Rel(prod_service, prod_repo_port, "persists via")
+Rel(prod_service, prod_tag_repo_port, "filters via", "excludeTagIds")
+
+Rel(prod_repo_impl, prod_repo_port, "implements")
+Rel(prod_repo_impl, prod_r2dbc_repo, "uses")
+Rel(prod_repo_impl, prod_mapper, "maps via")
+Rel(prod_mapper, prod_entity, "converts to/from")
+Rel(prod_mapper, prod_model, "converts to/from")
+Rel(prod_r2dbc_repo, prod_entity, "reads / writes")
+Rel(prod_entity, db, "stored in", "R2DBC")
+
+Rel(prod_service, prod_res, "returns as")
+
+SHOW_LEGEND()
+
+@enduml
+
+

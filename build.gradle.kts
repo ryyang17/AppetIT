@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.plugin.spring)
 	alias(libs.plugins.springframework.boot)
     alias(libs.plugins.spring.dependency.management)
+	id("jacoco")
 }
 
 group = "nl.appetit"
@@ -76,6 +77,10 @@ tasks.named<BootJar>("bootJar") {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	finalizedBy(tasks.jacocoTestReport, tasks.jacocoTestCoverageVerification)
+	jvmArgs = listOf(
+		"-javaagent:${classpath.find { it.name.contains("mockito-core") }?.absolutePath}"
+	)
 }
 
 tasks.withType<org.springframework.boot.gradle.tasks.run.BootRun>().configureEach {
