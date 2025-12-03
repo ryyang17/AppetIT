@@ -1,6 +1,8 @@
 package nl.appetit.api.presentation.controller
 
+import nl.appetit.api.data.entity.TranslationEntity
 import nl.appetit.api.data.repository.TranslationR2dbcRepository
+import nl.appetit.api.presentation.dto.translation.TranslationRequest
 import nl.appetit.api.presentation.dto.translation.TranslationResponse
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
@@ -13,7 +15,7 @@ class TranslationController(
 ) {
 
     /**
-     * GET /translations - Get all translations
+     * GET /translations - Get all translations.
      */
     @GetMapping
     fun getAllTranslations(): Flux<TranslationResponse> {
@@ -22,7 +24,7 @@ class TranslationController(
     }
 
     /**
-     * GET /translations/language/{language} - Get all translations for a specific language
+     * GET /translations/language/{language} - Get all translations for a specific language.
      * Example: GET /translations/language/nl
      */
     @GetMapping("/language/{language}")
@@ -32,7 +34,7 @@ class TranslationController(
     }
 
     /**
-     * GET /translations/{entityType}/{entityId} - Get all translations for a specific entity
+     * GET /translations/{entityType}/{entityId} - Get all translations for a specific entity.
      * Example: GET /translations/category/1
      */
     @GetMapping("/{entityType}/{entityId}")
@@ -45,7 +47,7 @@ class TranslationController(
     }
 
     /**
-     * GET /translations/{entityType}/{entityId}/{language} - Get translation for specific entity and language
+     * GET /translations/{entityType}/{entityId}/{language} - Get translation for specific entity and language.
      * Example: GET /translations/product/5/en
      */
     @GetMapping("/{entityType}/{entityId}/{language}")
@@ -58,7 +60,42 @@ class TranslationController(
             .map { it.toResponse() }
     }
 
-    private fun nl.appetit.api.data.entity.TranslationEntity.toResponse() = TranslationResponse(
+    /**
+     * POST /translations
+     *
+     * Upsert behaviour:
+     * - Look up an existing row by (entityType, entityId, language).
+     * - If it exists, update the `translation` field.
+     * - If it does not exist, create a new TranslationEntity.
+     *
+     * This keeps the API simple for the admin front-end: it can always
+     * call the same endpoint regardless of whether a translation already exists.
+     */
+    @PostMapping
+    fun upsertTranslation(@RequestBody request: Mono<TranslationRequest>): Mono<TranslationResponse> {
+        return request.flatMap { req ->
+            translationRepository
+                .findByEntityTypeAndEntityIdAndLanguage(req.entityType, req.entityId, req.language)
+                // If not found, create a new entity as the starting point.
+                .defaultIfEmpty(
+                    TranslationEntity(
+                        entityType = req.entityType,
+                        entityId = req.entityId,
+                        language = req.language,
+                        translation = req.translation
+                    )
+                )
+                // Whether existing or new, always overwrite the translation text.
+                .map { existing ->
+                    existing.copy(translation = req.translation)
+                }
+                // Persist the change and map back to response DTO.
+                .flatMap { toSave -> translationRepository.save(toSave) }
+                .map { it.toResponse() }
+        }
+    }
+
+    private fun TranslationEntity.toResponse() = TranslationResponse(
         translationId = id ?: 0,
         entityType = entityType,
         entityId = entityId,
