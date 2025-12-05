@@ -2,6 +2,7 @@ package nl.appetit.api.presentation.controller
 
 import nl.appetit.api.data.entity.OrderEntity
 import nl.appetit.api.logic.model.Order
+import nl.appetit.api.presentation.dto.order.OrderPatch
 import nl.appetit.api.logic.service.OrderService
 import nl.appetit.api.presentation.dto.order.OrderRequest
 import nl.appetit.api.presentation.dto.order.OrderResponse
@@ -39,4 +40,11 @@ class OrderController(
 
     @DeleteMapping
     fun deleteAll(): Mono<Void> = orderService.deleteAll()
+
+    @PatchMapping("/{id}")
+    fun patchOrder(
+        @PathVariable id: Int,
+        @RequestBody patch: OrderPatch
+    ): Mono<OrderResponse> =
+        orderService.patchOrder(id, patch)
 }

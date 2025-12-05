@@ -13,17 +13,18 @@ import reactor.core.publisher.Mono
 class OrderRepositoryImpl(
     private val db: OrderR2dbcRepository
 ) : OrderRepository {
+
     override fun findAll(): Flux<Order> =
-        db.findAll()
-            .map(OrderMapper::toModel)
+        db.findAll().map(OrderMapper::toModel)
 
     override fun findByTableId(tableId: Int): Flux<Order> =
-        db.findByTableId(tableId)
-            .map(OrderMapper::toModel)
+        db.findByTableId(tableId).map(OrderMapper::toModel)
+
+    override fun findById(id: Int): Mono<Order> =
+        db.findById(id).map(OrderMapper::toModel)
 
     override fun save(order: Order): Mono<Order> =
-        db.save(OrderMapper.toEntity(order))
-            .map(OrderMapper::toModel)
+        db.save(OrderMapper.toEntity(order)).map(OrderMapper::toModel)
 
     override fun deleteById(id: Int): Mono<Void> =
         db.deleteById(id)

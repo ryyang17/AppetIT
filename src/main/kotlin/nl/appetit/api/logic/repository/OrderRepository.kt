@@ -10,4 +10,5 @@ interface OrderRepository {
     fun save(order: Order): Mono<Order>
     fun deleteById(id: Int): Mono<Void>
     fun deleteAll(): Mono<Void>
+    fun findById(id: Int): Mono<Order>
 }
