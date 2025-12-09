@@ -42,6 +42,7 @@ const en = {
     subtotal: "Subtotal",
     total: "Total",
     proceedToCheckout: "Proceed to Checkout",
+    processing: "Processing...",
     noOrders: "No orders yet",
     noOrdersDesc: "Your order history will appear here",
     orderNumber: "Order #{{number}}",

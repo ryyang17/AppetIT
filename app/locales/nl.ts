@@ -42,6 +42,7 @@ const nl = {
     subtotal: "Subtotaal",
     total: "Totaal",
     proceedToCheckout: "Naar Afrekenen",
+    processing: "Verwerken...",
     noOrders: "Nog geen bestellingen",
     noOrdersDesc: "Je bestelgeschiedenis verschijnt hier",
     orderNumber: "Bestelling #{{number}}",

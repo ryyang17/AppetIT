@@ -1,7 +1,8 @@
 "use client";
 
 import { BottomNavigation } from "@/components/ui/bottom-navigation";
-import { ShoppingCart, ArrowLeft, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ShoppingCart, ArrowLeft, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { getDictionarySync } from "@/app/locales";
@@ -27,6 +28,7 @@ export default function CartPage() {
   const { selectedTable } = useTable();
   const { orders, orderItems, refreshOrders } = useOrders();
   const [viewMode, setViewMode] = useState<'cart' | 'orders'>('cart');
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const incrementQuantity = (id: number) => {
     const item = cartItems.find(item => item.product.id === id);
@@ -47,6 +49,10 @@ export default function CartPage() {
   };
 
   const handleProceedToCheckout = async () => {
+    // Prevent multiple clicks
+    if (isProcessing) return;
+    
+    setIsProcessing(true);
     try {
       // Use the selected table ID
       const order = await createOrder({ 
@@ -70,6 +76,8 @@ export default function CartPage() {
       console.log('Order completed successfully');
     } catch (error) {
       console.error('Failed to create order:', error);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -127,7 +135,7 @@ export default function CartPage() {
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 pb-20 max-w-4xl mx-auto w-full">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 pb-32 max-w-4xl mx-auto w-full">
                   
           {viewMode === 'cart' ? (
             // Cart View
@@ -233,12 +241,20 @@ export default function CartPage() {
                     </div>
                   </div>
 
-                  <button 
+                  <Button 
                     className="w-full bg-green-600 text-white py-3 rounded-lg font-medium mt-4 hover:bg-green-700 transition-colors"
                     onClick={handleProceedToCheckout}
+                    disabled={isProcessing || cartItems.length === 0 || !selectedTable}
                   >
-                    {dict.cart.proceedToCheckout}
-                  </button>
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {dict.cart.processing}
+                      </>
+                    ) : (
+                      dict.cart.proceedToCheckout
+                    )}
+                  </Button>
                 </div>
               )}
             </>
