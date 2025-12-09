@@ -5,6 +5,7 @@ import nl.appetit.api.logic.model.Order
 import nl.appetit.api.presentation.dto.order.OrderPatch
 import nl.appetit.api.presentation.dto.order.OrderResponse
 import nl.appetit.api.presentation.mapper.OrderMapper
+import nl.appetit.api.presentation.mapper.TableMapper
 import nl.appetit.api.logic.repository.OrderRepository
 import nl.appetit.api.logic.repository.TableRepository
 import org.springframework.stereotype.Service
@@ -20,6 +21,37 @@ class OrderService(
     fun findAll(): Flux<Order> = db.findAll()
 
     fun findByTableId(tableId: Int): Flux<Order> = db.findByTableId(tableId)
+
+    /**
+     * Get all orders with table data included to avoid N+1 queries
+     */
+    fun findAllWithTableData(): Flux<OrderResponse> =
+        db.findAll().flatMap { order ->
+            enrichOrderWithTableData(order)
+        }
+
+    /**
+     * Get orders by table ID with table data included
+     */
+    fun findByTableIdWithTableData(tableId: Int): Flux<OrderResponse> =
+        db.findByTableId(tableId).flatMap { order ->
+            enrichOrderWithTableData(order)
+        }
+
+    /**
+     * Helper method to enrich an order with its table data
+     */
+    private fun enrichOrderWithTableData(order: Order): Mono<OrderResponse> {
+        return if (order.tableId != null) {
+            tableRepository.findById(order.tableId)
+                .map { table ->
+                    OrderMapper.toResponse(order, TableMapper.toResponse(table))
+                }
+                .switchIfEmpty(Mono.just(OrderMapper.toResponse(order, null)))
+        } else {
+            Mono.just(OrderMapper.toResponse(order, null))
+        }
+    }
 
     fun save(order: Order): Mono<Order> {
         val tableId = order.tableId
@@ -62,6 +94,8 @@ class OrderService(
 
                 db.save(updated)
             }
-            .map(OrderMapper::toResponse)
+            .flatMap { savedOrder ->
+                enrichOrderWithTableData(savedOrder)
+            }
     }
 }

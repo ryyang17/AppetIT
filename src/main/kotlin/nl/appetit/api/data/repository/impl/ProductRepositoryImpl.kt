@@ -21,6 +21,10 @@ class ProductRepositoryImpl(
         db.findById(id)
             .map(ProductMapper::toModel)
 
+    override fun findAllById(ids: Iterable<Int>): Flux<Product> =
+        db.findAllById(ids)
+            .map(ProductMapper::toModel)
+
     override fun save(product: Product): Mono<Product> =
         db.save(ProductMapper.toEntity(product))
             .map(ProductMapper::toModel)

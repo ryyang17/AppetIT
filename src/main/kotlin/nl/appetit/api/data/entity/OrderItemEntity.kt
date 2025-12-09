@@ -3,6 +3,7 @@ package nl.appetit.api.data.entity
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import java.math.BigDecimal
 import java.time.Instant
 
 @Table("order_item")
@@ -25,6 +26,12 @@ data class OrderItemEntity(
 
     @Column("status")
     val status: String? = "PENDING",
+
+    @Column("comment")
+    val comment: String? = null,
+
+    @Column("price")
+    val price: BigDecimal? = null,
 
     @Column("created_at")
     val createdAt: Instant = Instant.now(),
