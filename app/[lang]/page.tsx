@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BottomNavigation } from "@/components/ui/bottom-navigation";
 import { ProductDetailModal } from "@/components/ui/product-detail-modal";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { TableSelector } from "@/components/ui/table-selector";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import { Loader2, Search } from "lucide-react";
@@ -174,7 +175,15 @@ export default function Home() {
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">
               {dict.menu.title}
             </h1>
-            <LanguageSwitcher />
+            <div className="flex items-center gap-3">
+              <TableSelector dictionary={{
+                selectTable: dict.menu.selectTable,
+                table: dict.menu.table,
+                noTables: dict.menu.noTables,
+                loading: dict.common.loading,
+              }} />
+              <LanguageSwitcher />
+            </div>
           </div>
           
           {/* Search Bar */}

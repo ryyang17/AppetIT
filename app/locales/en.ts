@@ -20,6 +20,9 @@ const en = {
     noCategories: "No menu categories available",
     checkBackLater: "Check back later for delicious options!",
     includes: "Includes: {{categories}}",
+    selectTable: "Select Table",
+    table: "Table",
+    noTables: "No tables available",
   },
   navigation: {
     home: "Home",
@@ -45,6 +48,7 @@ const en = {
     items: "{{count}} item",
     items_plural: "{{count}} items",
     quantity: "Quantity: {{quantity}}",
+    commentPlaceholder: "Add a note (e.g., no onions, extra sauce)...",
   },
   product: {
     allergens: "Allergens",

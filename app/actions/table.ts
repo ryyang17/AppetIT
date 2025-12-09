@@ -7,7 +7,7 @@ export type Table = {
   restaurantId: number;
   tableNumber: number;
   capacity: number | null;
-  isActive: boolean;
+  active: boolean;
 };
 
 export const fetchTables = async (): Promise<Table[]> => {
@@ -24,7 +24,7 @@ export const createTable = async (tableData: {
   restaurantId: number;
   tableNumber: number;
   capacity?: number;
-  isActive?: boolean;
+  active?: boolean;
 }): Promise<Table> => {
   const response = await fetch(`${API_BASE_URL}/tables`, {
     method: 'POST',
@@ -35,7 +35,7 @@ export const createTable = async (tableData: {
       restaurantId: tableData.restaurantId,
       tableNumber: tableData.tableNumber,
       capacity: tableData.capacity ?? 4,
-      isActive: tableData.isActive ?? true,
+      active: tableData.active ?? true,
     }),
   });
   if (!response.ok) {
@@ -50,7 +50,7 @@ export const fetchFirstActiveTable = async (): Promise<Table | null> => {
     const tables = await fetchTables();
     
     // First, try to find an active table
-    const activeTable = tables.find(table => table.isActive);
+    const activeTable = tables.find(table => table.active);
     if (activeTable) {
       return activeTable;
     }
@@ -69,7 +69,7 @@ export const fetchFirstActiveTable = async (): Promise<Table | null> => {
             restaurantId: firstTable.restaurantId,
             tableNumber: firstTable.tableNumber,
             capacity: firstTable.capacity ?? 4,
-            isActive: true,
+            active: true,
           }),
         });
         if (response.ok) {
@@ -91,7 +91,7 @@ export const fetchFirstActiveTable = async (): Promise<Table | null> => {
         restaurantId: 1, // Default restaurant ID from seeder
         tableNumber: 1,
         capacity: 4,
-        isActive: true,
+        active: true,
       });
       return newTable;
     } catch (createError) {

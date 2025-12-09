@@ -18,6 +18,7 @@ export const createOrderItem = async (orderItemData: {
   quantity: number;
   price: number;
   status: string;
+  comment?: string;
 }): Promise<OrderItem> => {
   const response = await fetch(`${API_BASE_URL}/order-items`, {
     method: 'POST',

@@ -20,6 +20,9 @@ const nl = {
     noCategories: "Geen categorieën beschikbaar",
     checkBackLater: "Kom later terug voor heerlijke opties!",
     includes: "Bevat: {{categories}}",
+    selectTable: "Selecteer Tafel",
+    table: "Tafel",
+    noTables: "Geen tafels beschikbaar",
   },
   navigation: {
     home: "Home",
@@ -45,6 +48,7 @@ const nl = {
     items: "{{count}} item",
     items_plural: "{{count}} items",
     quantity: "Aantal: {{quantity}}",
+    commentPlaceholder: "Voeg een notitie toe (bijv. geen ui, extra saus)...",
   },
   product: {
     allergens: "Allergenen",

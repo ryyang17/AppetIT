@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchOrders } from '@/app/actions/order'
 import { fetchOrderItems } from '@/app/actions/orderItem';
-import { Order } from '@/lib/interfaces/order';
-import { OrderItem } from '@/lib/interfaces/order';
-import { Product } from '@/lib/interfaces/product';
-import { fetchProducts } from '@/app/actions/product';
+import { Order, OrderItem } from '@/lib/interfaces/order';
 
 export function useOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -15,25 +12,14 @@ export function useOrders() {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      const [ordersData, orderItemsData, productsData] = await Promise.all([
+      // Backend now returns product data with order items - no need for extra product fetch
+      const [ordersData, orderItemsData] = await Promise.all([
         fetchOrders(),
-        fetchOrderItems(),
-        fetchProducts()
+        fetchOrderItems()
       ]);
       
-      // Enrich order items with product data
-      const enrichedOrderItems = orderItemsData.map(orderItem => {
-        const product = productsData.find(p => p.id === orderItem.productId);
-        return {
-          ...orderItem,
-          product: product || undefined,
-          // Use product price if orderItem price is missing or 0
-          price: orderItem.price && orderItem.price > 0 ? orderItem.price : product?.price || 0
-        } as OrderItem & { product?: Product };
-      });
-      
       setOrders(ordersData);
-      setOrderItems(enrichedOrderItems);
+      setOrderItems(orderItemsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load orders');
     } finally {

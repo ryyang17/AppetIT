@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import { getDictionarySync } from "@/app/locales";
 import { type Locale } from "@/lib/i18n/config";
 import { useCart } from "@/contexts/CartContext";
+import { useTable } from "@/contexts/TableContext";
 import { useOrders } from "@/hooks/useOrders";
 import { createOrder } from "@/app/actions/order";
 import { createOrderItem } from "@/app/actions/orderItem";
@@ -22,7 +23,8 @@ export default function CartPage() {
 
   const { getProductTranslation } = useDatabaseTranslations(lang);
   
-  const { cartItems, updateQuantity, removeFromCart, getSubtotal, clearCart } = useCart();
+  const { cartItems, updateQuantity, updateComment, removeFromCart, getSubtotal, clearCart } = useCart();
+  const { selectedTable } = useTable();
   const { orders, orderItems, refreshOrders } = useOrders();
   const [viewMode, setViewMode] = useState<'cart' | 'orders'>('cart');
   
@@ -46,7 +48,11 @@ export default function CartPage() {
 
   const handleProceedToCheckout = async () => {
     try {
-      const order = await createOrder({ status: 'pending' });
+      // Use the selected table ID
+      const order = await createOrder({ 
+        status: 'pending',
+        tableId: selectedTable?.id 
+      });
       
       for (const cartItem of cartItems) {
         await createOrderItem({
@@ -54,7 +60,8 @@ export default function CartPage() {
           productId: cartItem.product.id,
           quantity: cartItem.quantity,
           price: cartItem.product.price,
-          status: 'pending'
+          status: 'pending',
+          comment: cartItem.comment || undefined
         });
       }
       
@@ -193,6 +200,17 @@ export default function CartPage() {
                           </button>
                         </div>
                       </div>
+                      
+                      {/* Comment input */}
+                      <div className="mt-3">
+                        <input
+                          type="text"
+                          placeholder={dict.cart.commentPlaceholder || "Add a note (e.g., no onions, extra sauce)..."}
+                          value={item.comment || ''}
+                          onChange={(e) => updateComment(item.product.id, e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -285,37 +303,44 @@ export default function CartPage() {
                         <div className="p-4">
                           <div className="space-y-3">
                             {items.map((orderItem, itemIndex) => (
-                              <div key={`orderIdx-${orderIndex}-itemIdx-${itemIndex}`} className="flex items-center justify-between py-2">
-                                <div className="flex items-center space-x-3">
-                                  <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                                    {(orderItem as OrderItem).product?.imageUrl ? (
-                                      <Image 
-                                        src={(orderItem as OrderItem).product.imageUrl} 
-                                        alt={getProductTranslation(orderItem.productId, (orderItem as OrderItem).product?.name || 'Product')}
-                                        width={64}
-                                        height={64}
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                          const target = e.target as HTMLImageElement;
-                                          target.style.display = 'none';
-                                          target.nextElementSibling?.classList.remove('hidden');
-                                        }}
-                                      />
-                                    ) : null}
-                                    <span className={`text-lg ${(orderItem as OrderItem).product?.imageUrl ? 'hidden' : ''}`}>🍽</span>
+                              <div key={`orderIdx-${orderIndex}-itemIdx-${itemIndex}`} className="py-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-3">
+                                    <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                                      {(orderItem as OrderItem).product?.imageUrl ? (
+                                        <Image 
+                                          src={(orderItem as OrderItem).product?.imageUrl || ''} 
+                                          alt={getProductTranslation(orderItem.productId, (orderItem as OrderItem).product?.name || 'Product')}
+                                          width={64}
+                                          height={64}
+                                          className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.style.display = 'none';
+                                            target.nextElementSibling?.classList.remove('hidden');
+                                          }}
+                                        />
+                                      ) : null}
+                                      <span className={`text-lg ${(orderItem as OrderItem).product?.imageUrl ? 'hidden' : ''}`}>🍽</span>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-medium text-gray-800">
+                                        {getProductTranslation(orderItem.productId, (orderItem as OrderItem).product?.name || `Product ID: ${orderItem.productId}`)}
+                                      </h4>
+                                      <p className="text-sm text-gray-600">€{(orderItem.price || 0).toFixed(2)}</p>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <h4 className="font-medium text-gray-800">
-                                      {getProductTranslation(orderItem.productId, (orderItem as OrderItem).product?.name || `Product ID: ${orderItem.productId}`)}
-                                    </h4>
-                                    <p className="text-sm text-gray-600">€{(orderItem.price || 0).toFixed(2)}</p>
+                                  <div className="text-right">
+                                    <div className="font-medium text-gray-800">
+                                      {dict.cart.quantity.replace('{{quantity}}', orderItem.quantity.toString())}
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <div className="font-medium text-gray-800">
-                                    {dict.cart.quantity.replace('{{quantity}}', orderItem.quantity.toString())}
+                                {(orderItem as OrderItem).comment && (
+                                  <div className="mt-2 ml-19 pl-3 border-l-2 border-gray-200">
+                                    <p className="text-sm text-gray-500 italic">{(orderItem as OrderItem).comment}</p>
                                   </div>
-                                </div>
+                                )}
                               </div>
                             ))}
                           </div>

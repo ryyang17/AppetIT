@@ -1,5 +1,13 @@
 import { Product } from "./product";
 
+export interface Table {
+  id: number;
+  restaurantId: number;
+  tableNumber: number;
+  capacity?: number;
+  isActive: boolean;
+}
+
 export interface Order {
   id: number;
   tableId?: number;
@@ -8,6 +16,7 @@ export interface Order {
   status: string;
   createdAt: string;
   totalAmount?: number;
+  table?: Table;
 }
 
 export interface OrderItem {
@@ -17,5 +26,6 @@ export interface OrderItem {
   quantity: number;
   price: number;
   status: string;
-  product: Product;
+  comment?: string;
+  product?: Product;
 }
