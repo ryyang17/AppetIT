@@ -1,7 +1,5 @@
 package nl.appetit.api.presentation.controller
 
-import nl.appetit.api.data.entity.OrderEntity
-import nl.appetit.api.logic.model.Order
 import nl.appetit.api.presentation.dto.order.OrderPatch
 import nl.appetit.api.logic.service.OrderService
 import nl.appetit.api.presentation.dto.order.OrderRequest
@@ -10,8 +8,6 @@ import nl.appetit.api.presentation.mapper.OrderMapper
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.math.BigDecimal
-import java.time.Instant
 
 @RestController
 @RequestMapping("/orders")
@@ -20,19 +16,17 @@ class OrderController(
 ) {
 
     @GetMapping
-    fun list(): Flux<OrderResponse> = orderService.findAll()
-        .map(OrderMapper::toResponse)
+    fun list(): Flux<OrderResponse> = orderService.findAllWithTableData()
 
     @GetMapping("/table/{tableId}")
     fun listByTable(@PathVariable tableId: Int): Flux<OrderResponse> =
-        orderService.findByTableId(tableId)
-            .map(OrderMapper::toResponse)
+        orderService.findByTableIdWithTableData(tableId)
 
     @PostMapping
     fun insert(@RequestBody request: Mono<OrderRequest>): Mono<OrderResponse> =
         request.flatMap { order ->
             orderService.save(OrderMapper.toModel(order))
-                .map(OrderMapper::toResponse)
+                .map { savedOrder -> OrderMapper.toResponse(savedOrder) }
         }
 
     @DeleteMapping("/{id}")

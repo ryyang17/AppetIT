@@ -11,6 +11,8 @@ object OrderItemMapper {
         staffId = source.staffId,
         quantity = source.quantity,
         status = source.status ?: "PENDING",
+        comment = source.comment,
+        price = source.price,
         createdAt = source.createdAt,
         updatedAt = source.updatedAt,
     )
@@ -22,6 +24,8 @@ object OrderItemMapper {
         staffId = source.staffId,
         quantity = source.quantity,
         status = source.status,
+        comment = source.comment,
+        price = source.price,
         createdAt = source.createdAt,
         updatedAt = source.updatedAt,
     )

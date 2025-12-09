@@ -1,6 +1,5 @@
 package nl.appetit.api.presentation.controller
 
-import nl.appetit.api.logic.model.OrderItem
 import nl.appetit.api.logic.service.OrderItemService
 import nl.appetit.api.presentation.dto.order_item.OrderItemRequest
 import nl.appetit.api.presentation.dto.order_item.OrderItemResponse
@@ -16,19 +15,17 @@ class OrderItemController(
 ) {
 
     @GetMapping
-    fun list(): Flux<OrderItemResponse> = service.getAllOrderItems()
-        .map(OrderItemMapper::toResponse)
+    fun list(): Flux<OrderItemResponse> = service.getAllOrderItemsWithProducts()
 
     @GetMapping("/order/{orderId}")
     fun listByOrder(@PathVariable orderId: Int): Flux<OrderItemResponse> =
-        service.getItemsByOrder(orderId)
-            .map(OrderItemMapper::toResponse)
+        service.getItemsByOrderWithProducts(orderId)
 
     @PostMapping
     fun insert(@RequestBody request: Mono<OrderItemRequest>): Mono<OrderItemResponse> =
         request.flatMap { orderItem ->
             service.insertOrderItem(OrderItemMapper.toModel(orderItem))
-                .map(OrderItemMapper::toResponse)
+                .map { savedItem -> OrderItemMapper.toResponse(savedItem) }
         }
 
     @DeleteMapping("/{id}")

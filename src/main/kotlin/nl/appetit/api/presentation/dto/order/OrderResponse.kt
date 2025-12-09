@@ -1,5 +1,6 @@
 package nl.appetit.api.presentation.dto.order
 
+import nl.appetit.api.presentation.dto.table.TableResponse
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -12,6 +13,7 @@ data class OrderResponse(
     val claimedByStaffId: Int? = null,
     val preparedByStaffId: Int? = null,
     val totalAmount: BigDecimal? = null,
+    val table: TableResponse? = null,
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
     val completedAt: Instant? = null

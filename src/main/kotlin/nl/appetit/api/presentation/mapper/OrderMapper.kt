@@ -3,6 +3,7 @@ package nl.appetit.api.presentation.mapper
 import nl.appetit.api.logic.model.Order
 import nl.appetit.api.presentation.dto.order.OrderRequest
 import nl.appetit.api.presentation.dto.order.OrderResponse
+import nl.appetit.api.presentation.dto.table.TableResponse
 import java.time.Instant
 
 object OrderMapper {
@@ -18,7 +19,7 @@ object OrderMapper {
         updatedAt = Instant.now()
     )
 
-    fun toResponse(source: Order) = OrderResponse(
+    fun toResponse(source: Order, table: TableResponse? = null) = OrderResponse(
         id = source.id,
         tableId = source.tableId,
         restaurantId = source.restaurantId,
@@ -27,6 +28,7 @@ object OrderMapper {
         claimedByStaffId = source.claimedByStaffId,
         preparedByStaffId = source.preparedByStaffId,
         totalAmount = source.totalAmount,
+        table = table,
         createdAt = source.createdAt,
         updatedAt = source.updatedAt,
         completedAt = source.completedAt,
