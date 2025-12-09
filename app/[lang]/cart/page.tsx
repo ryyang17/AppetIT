@@ -16,6 +16,7 @@ import { useState } from "react";
 import { OrderItem } from "@/lib/interfaces/order";
 import Image from "next/image";
 import { useDatabaseTranslations } from "@/hooks/useDatabaseTranslations";
+import { toast } from "sonner";
 
 export default function CartPage() {
   const params = useParams();
@@ -52,12 +53,24 @@ export default function CartPage() {
     // Prevent multiple clicks
     if (isProcessing) return;
     
+    // Check if table is selected
+    if (!selectedTable) {
+      toast.error(dict.cart.noTableSelected || "Please select a table first");
+      return;
+    }
+    
+    // Check if cart is empty
+    if (cartItems.length === 0) {
+      toast.error(dict.cart.emptyCart || "Your cart is empty");
+      return;
+    }
+    
     setIsProcessing(true);
     try {
       // Use the selected table ID
       const order = await createOrder({ 
         status: 'pending',
-        tableId: selectedTable?.id 
+        tableId: selectedTable.id 
       });
       
       for (const cartItem of cartItems) {
@@ -73,9 +86,10 @@ export default function CartPage() {
       
       clearCart();
       await refreshOrders();
-      console.log('Order completed successfully');
+      toast.success(dict.cart.orderSuccess || "Order placed successfully!");
     } catch (error) {
       console.error('Failed to create order:', error);
+      toast.error(dict.cart.orderError || "Failed to place order. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -135,7 +149,7 @@ export default function CartPage() {
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 pb-32 max-w-4xl mx-auto w-full">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 pb-20 max-w-4xl mx-auto w-full">
                   
           {viewMode === 'cart' ? (
             // Cart View
@@ -225,7 +239,7 @@ export default function CartPage() {
               )}
 
               {cartItems.length > 0 && (
-                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 mt-6">
+                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 mt-6 mb-10">
                   <h3 className="font-semibold text-gray-800 mb-3">{dict.cart.orderSummary}</h3>
                   
                   <div className="space-y-2 text-sm">
