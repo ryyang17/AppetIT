@@ -159,8 +159,6 @@ export default function Home() {
     };
   }).filter(group => group.products.length > 0); // Only show categories that have products
 
-  // Debug logging
-  console.log('📊 Grouped products:', groupedProducts);
 
   return (
     <div className="min-h-screen bg-gray-50">

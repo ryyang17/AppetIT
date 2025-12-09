@@ -296,8 +296,8 @@ export default function CartPage() {
                                           <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
                                             {(orderItem as OrderItem).product?.imageUrl ? (
                                               <Image 
-                                                src={(orderItem as OrderItem).product.imageUrl} 
-                                                alt={(orderItem as OrderItem).product.name || 'Product'}
+                                                src={(orderItem as OrderItem).product?.imageUrl || ''} 
+                                                alt={(orderItem as OrderItem).product?.name || ''}
                                                 className="w-full h-full object-cover"
                                                 objectFit="cover"
                                                 layout="fill"

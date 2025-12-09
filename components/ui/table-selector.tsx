@@ -62,3 +62,4 @@ export function TableSelector({ dictionary }: TableSelectorProps) {
   );
 }
 
+
