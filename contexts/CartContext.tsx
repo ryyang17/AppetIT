@@ -6,6 +6,7 @@ import { Product } from '@/lib/interfaces/product';
 export interface CartItem {
   product: Product;
   quantity: number;
+  comment?: string;
 }
 
 interface CartContextType {
@@ -13,6 +14,7 @@ interface CartContextType {
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (id: number) => void;
   updateQuantity: (id: number, quantity: number) => void;
+  updateComment: (id: number, comment: string) => void;
   getTotalItems: () => number;
   getSubtotal: () => number;
   clearCart: () => void;
@@ -93,6 +95,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const updateComment = (id: number, comment: string) => {
+    setCartItems(prevItems =>
+      prevItems.map(item =>
+        item.product.id === id ? { ...item, comment } : item
+      )
+    );
+  };
+
   const getTotalItems = () => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
@@ -112,6 +122,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addToCart,
       removeFromCart,
       updateQuantity,
+      updateComment,
       getTotalItems,
       getSubtotal,
       clearCart

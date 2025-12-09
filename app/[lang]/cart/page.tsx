@@ -1,12 +1,14 @@
 "use client";
 
 import { BottomNavigation } from "@/components/ui/bottom-navigation";
-import { ShoppingCart, ArrowLeft, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ShoppingCart, ArrowLeft, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { getDictionarySync } from "@/app/locales";
 import { type Locale } from "@/lib/i18n/config";
 import { useCart } from "@/contexts/CartContext";
+import { useTable } from "@/contexts/TableContext";
 import { useOrders } from "@/hooks/useOrders";
 import { createOrder } from "@/app/actions/order";
 import { createOrderItem } from "@/app/actions/orderItem";
@@ -14,6 +16,7 @@ import { useState } from "react";
 import { OrderItem } from "@/lib/interfaces/order";
 import Image from "next/image";
 import { useDatabaseTranslations } from "@/hooks/useDatabaseTranslations";
+import { toast } from "sonner";
 
 export default function CartPage() {
   const params = useParams();
@@ -22,9 +25,11 @@ export default function CartPage() {
 
   const { getProductTranslation } = useDatabaseTranslations(lang);
   
-  const { cartItems, updateQuantity, removeFromCart, getSubtotal, clearCart } = useCart();
+  const { cartItems, updateQuantity, updateComment, removeFromCart, getSubtotal, clearCart } = useCart();
+  const { selectedTable } = useTable();
   const { orders, orderItems, refreshOrders } = useOrders();
   const [viewMode, setViewMode] = useState<'cart' | 'orders'>('cart');
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const incrementQuantity = (id: number) => {
     const item = cartItems.find(item => item.product.id === id);
@@ -45,8 +50,28 @@ export default function CartPage() {
   };
 
   const handleProceedToCheckout = async () => {
+    // Prevent multiple clicks
+    if (isProcessing) return;
+    
+    // Check if table is selected
+    if (!selectedTable) {
+      toast.error(dict.cart.noTableSelected || "Please select a table first");
+      return;
+    }
+    
+    // Check if cart is empty
+    if (cartItems.length === 0) {
+      toast.error(dict.cart.emptyCart || "Your cart is empty");
+      return;
+    }
+    
+    setIsProcessing(true);
     try {
-      const order = await createOrder({ status: 'pending' });
+      // Use the selected table ID
+      const order = await createOrder({ 
+        status: 'pending',
+        tableId: selectedTable.id 
+      });
       
       for (const cartItem of cartItems) {
         await createOrderItem({
@@ -54,15 +79,19 @@ export default function CartPage() {
           productId: cartItem.product.id,
           quantity: cartItem.quantity,
           price: cartItem.product.price,
-          status: 'pending'
+          status: 'pending',
+          comment: cartItem.comment || undefined
         });
       }
       
       clearCart();
       await refreshOrders();
-      console.log('Order completed successfully');
+      toast.success(dict.cart.orderSuccess || "Order placed successfully!");
     } catch (error) {
       console.error('Failed to create order:', error);
+      toast.error(dict.cart.orderError || "Failed to place order. Please try again.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -193,13 +222,24 @@ export default function CartPage() {
                           </button>
                         </div>
                       </div>
+                      
+                      {/* Comment input */}
+                      <div className="mt-3">
+                        <input
+                          type="text"
+                          placeholder={dict.cart.commentPlaceholder || "Add a note (e.g., no onions, extra sauce)..."}
+                          value={item.comment || ''}
+                          onChange={(e) => updateComment(item.product.id, e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
 
               {cartItems.length > 0 && (
-                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 mt-6">
+                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 mt-6 mb-10">
                   <h3 className="font-semibold text-gray-800 mb-3">{dict.cart.orderSummary}</h3>
                   
                   <div className="space-y-2 text-sm">
@@ -215,12 +255,20 @@ export default function CartPage() {
                     </div>
                   </div>
 
-                  <button 
+                  <Button 
                     className="w-full bg-green-600 text-white py-3 rounded-lg font-medium mt-4 hover:bg-green-700 transition-colors"
                     onClick={handleProceedToCheckout}
+                    disabled={isProcessing || cartItems.length === 0 || !selectedTable}
                   >
-                    {dict.cart.proceedToCheckout}
-                  </button>
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {dict.cart.processing}
+                      </>
+                    ) : (
+                      dict.cart.proceedToCheckout
+                    )}
+                  </Button>
                 </div>
               )}
             </>
@@ -285,37 +333,44 @@ export default function CartPage() {
                         <div className="p-4">
                           <div className="space-y-3">
                             {items.map((orderItem, itemIndex) => (
-                              <div key={`orderIdx-${orderIndex}-itemIdx-${itemIndex}`} className="flex items-center justify-between py-2">
-                                <div className="flex items-center space-x-3">
-                                  <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                                    {(orderItem as OrderItem).product?.imageUrl ? (
-                                      <Image 
-                                        src={(orderItem as OrderItem).product.imageUrl} 
-                                        alt={getProductTranslation(orderItem.productId, (orderItem as OrderItem).product?.name || 'Product')}
-                                        width={64}
-                                        height={64}
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                          const target = e.target as HTMLImageElement;
-                                          target.style.display = 'none';
-                                          target.nextElementSibling?.classList.remove('hidden');
-                                        }}
-                                      />
-                                    ) : null}
-                                    <span className={`text-lg ${(orderItem as OrderItem).product?.imageUrl ? 'hidden' : ''}`}>🍽</span>
+                              <div key={`orderIdx-${orderIndex}-itemIdx-${itemIndex}`} className="py-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-3">
+                                    <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                                      {(orderItem as OrderItem).product?.imageUrl ? (
+                                        <Image 
+                                          src={(orderItem as OrderItem).product?.imageUrl || ''} 
+                                          alt={getProductTranslation(orderItem.productId, (orderItem as OrderItem).product?.name || 'Product')}
+                                          width={64}
+                                          height={64}
+                                          className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.style.display = 'none';
+                                            target.nextElementSibling?.classList.remove('hidden');
+                                          }}
+                                        />
+                                      ) : null}
+                                      <span className={`text-lg ${(orderItem as OrderItem).product?.imageUrl ? 'hidden' : ''}`}>🍽</span>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-medium text-gray-800">
+                                        {getProductTranslation(orderItem.productId, (orderItem as OrderItem).product?.name || `Product ID: ${orderItem.productId}`)}
+                                      </h4>
+                                      <p className="text-sm text-gray-600">€{(orderItem.price || 0).toFixed(2)}</p>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <h4 className="font-medium text-gray-800">
-                                      {getProductTranslation(orderItem.productId, (orderItem as OrderItem).product?.name || `Product ID: ${orderItem.productId}`)}
-                                    </h4>
-                                    <p className="text-sm text-gray-600">€{(orderItem.price || 0).toFixed(2)}</p>
+                                  <div className="text-right">
+                                    <div className="font-medium text-gray-800">
+                                      {dict.cart.quantity.replace('{{quantity}}', orderItem.quantity.toString())}
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <div className="font-medium text-gray-800">
-                                    {dict.cart.quantity.replace('{{quantity}}', orderItem.quantity.toString())}
+                                {(orderItem as OrderItem).comment && (
+                                  <div className="mt-2 ml-19 pl-3 border-l-2 border-gray-200">
+                                    <p className="text-sm text-gray-500 italic">{(orderItem as OrderItem).comment}</p>
                                   </div>
-                                </div>
+                                )}
                               </div>
                             ))}
                           </div>
