@@ -14,7 +14,8 @@ import reactor.core.publisher.Mono
 @Service
 class OrderService(
     private val db: OrderRepository,
-    private val tableRepository: TableRepository
+    private val tableRepository: TableRepository,
+    private val barUpdateService: BarUpdateService
 ) {
     fun findAll(): Flux<Order> = db.findAll()
 
@@ -32,10 +33,16 @@ class OrderService(
                         Mono.error<Order>(IllegalArgumentException("Table $tableId does not belong to restaurant ${order.restaurantId}"))
                     } else {
                         db.save(order)
+                            .doOnNext { savedOrder ->
+                                barUpdateService.pushUpdate("${order.tableId}", "${savedOrder.id}")
+                            }
                     }
                 }
         } else {
             db.save(order)
+                .doOnNext { savedOrder ->
+                    barUpdateService.pushUpdate("${order.tableId}", "${savedOrder.id}")
+                }
         }
     }
 
