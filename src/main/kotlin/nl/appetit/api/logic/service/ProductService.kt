@@ -1,6 +1,5 @@
 package nl.appetit.api.logic.service
 
-import nl.appetit.api.data.entity.ProductEntity
 import nl.appetit.api.logic.model.Product
 import nl.appetit.api.logic.repository.ProductRepository
 import nl.appetit.api.logic.repository.ProductTagRepository
@@ -11,7 +10,8 @@ import reactor.core.publisher.Mono
 @Service
 class ProductService(
     private val db: ProductRepository,
-    private val productTagRepository: ProductTagRepository
+    private val productTagRepository: ProductTagRepository,
+    private val restaurantProductService: RestaurantProductService
 ) {
     fun findAll(): Flux<Product> =
         db.findAll()
@@ -53,5 +53,3 @@ class ProductService(
 		}
 	}
 }
-
-

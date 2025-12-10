@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="appetit@localhost" uuid="a54ed000-de39-4c63-a24c-eaed2635b82e">
+    <data-source source="LOCAL" name="appetit@localhost" uuid="8eb63c2b-7003-4180-9d4d-dc2ab58a41ac">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>

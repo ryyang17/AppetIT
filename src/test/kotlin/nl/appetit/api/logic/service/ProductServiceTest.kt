@@ -17,13 +17,15 @@ class ProductServiceTest {
 
     private lateinit var productRepository: ProductRepository
     private lateinit var productTagRepository: ProductTagRepository
+    private lateinit var restaurantProductService: RestaurantProductService
     private lateinit var productService: ProductService
 
     @BeforeEach
     fun setUp() {
         productRepository = mock()
         productTagRepository = mock()
-        productService = ProductService(productRepository, productTagRepository)
+        restaurantProductService = mock()
+        productService = ProductService(productRepository, productTagRepository, restaurantProductService)
     }
 
     @Test

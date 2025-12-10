@@ -23,6 +23,8 @@ import java.time.LocalDateTime
 class RestaurantServiceTest {
     @Mock
     lateinit var restaurantRepository: RestaurantRepository
+    @Mock
+    lateinit var restaurantProductService: RestaurantProductService
     @InjectMocks
     lateinit var restaurantService: RestaurantService
     private lateinit var restaurant: Restaurant
