@@ -20,6 +20,9 @@ class OrderRepositoryImpl(
     override fun findByTableId(tableId: Int): Flux<Order> =
         db.findByTableId(tableId).map(OrderMapper::toModel)
 
+    override fun findByRestaurantIdAndCategoryName(restaurantId: Int, categoryName: String): Flux<Order> =
+        db.findByRestaurantIdAndCategoryName(restaurantId, categoryName).map(OrderMapper::toModel)
+
     override fun findById(id: Int): Mono<Order> =
         db.findById(id).map(OrderMapper::toModel)
 
