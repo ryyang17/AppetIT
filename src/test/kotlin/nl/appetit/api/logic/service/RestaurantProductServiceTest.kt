@@ -6,7 +6,6 @@ import nl.appetit.api.logic.model.Product
 import nl.appetit.api.logic.model.Restaurant
 import nl.appetit.api.logic.repository.ProductRepository
 import nl.appetit.api.logic.repository.RestaurantRepository
-import nl.appetit.api.presentation.dto.restaurant.RestaurantProductResponse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.*
@@ -255,6 +254,25 @@ class RestaurantProductServiceTest {
         StepVerifier.create(result)
             .expectNext(false)
             .verifyComplete()
+    }
+
+    @Test
+    fun `removeProductFromRestaurant should delete restaurant-product link`() {
+        // Arrange
+        val restaurantId = 1
+        val productId = 10
+
+        whenever(restaurantProductRepository.deleteByRestaurantIdAndProductId(restaurantId, productId))
+            .thenReturn(Mono.empty())
+
+        // Act
+        val result = restaurantProductService.removeProductFromRestaurant(restaurantId, productId)
+
+        // Assert
+        StepVerifier.create(result)
+            .verifyComplete()
+
+        verify(restaurantProductRepository).deleteByRestaurantIdAndProductId(restaurantId, productId)
     }
 
     // Helper methods

@@ -18,7 +18,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 @RestController
-@RequestMapping("restaurants")
+@RequestMapping("/restaurants")
 class RestaurantController(
     private val restaurantService: RestaurantService,
 ) {

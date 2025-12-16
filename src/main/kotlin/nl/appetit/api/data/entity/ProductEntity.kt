@@ -1,6 +1,5 @@
 package nl.appetit.api.data.entity
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
@@ -26,7 +25,6 @@ data class ProductEntity(
 	val imageUrl: String = "",
 
 	@Column("is_available")
-	@JsonProperty("available")
 	val isAvailable: Boolean,
 
 	// Foreign key linking this product to a category (one category -> many products)
@@ -39,5 +37,3 @@ data class ProductEntity(
 	@Column("updated_at")
 	val updatedAt: Instant = Instant.now()
 )
-
-

@@ -7,13 +7,14 @@ import nl.appetit.api.presentation.dto.restaurant.UpdateAvailabilityRequest
 import nl.appetit.api.presentation.dto.restaurant.UpdatePriceRequest
 import nl.appetit.api.presentation.dto.restaurant.ProductAvailabilityResponse
 import nl.appetit.api.presentation.dto.restaurant.RestaurantProductResponse
+import nl.appetit.api.presentation.dto.restaurant.UpdateSuccessResponse
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 @RestController
-@RequestMapping("/api/restaurants")
+@RequestMapping("/restaurants")
 class RestaurantProductController(
     private val restaurantProductService: RestaurantProductService
 ) {
@@ -46,27 +47,42 @@ class RestaurantProductController(
     }
 
     @PatchMapping("/{restaurantId}/products/{productId}/availability")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     fun updateProductAvailability(
         @PathVariable restaurantId: Int,
         @PathVariable productId: Int,
         @RequestBody request: UpdateAvailabilityRequest
-    ): Mono<Void> {
+    ): Mono<UpdateSuccessResponse> {
         return restaurantProductService.updateProductAvailability(
             restaurantId, productId, request.isAvailable
-        )
+        ).then(Mono.just(UpdateSuccessResponse(success = true, message = "Product availability updated successfully")))
     }
 
     @PatchMapping("/{restaurantId}/products/{productId}/price")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     fun updateProductPrice(
         @PathVariable restaurantId: Int,
         @PathVariable productId: Int,
         @RequestBody request: UpdatePriceRequest
-    ): Mono<Void> {
+    ): Mono<UpdateSuccessResponse> {
         return restaurantProductService.updateProductPrice(
             restaurantId, productId, request.customPrice
-        )
+        ).then(Mono.just(UpdateSuccessResponse(success = true, message = "Product price updated successfully")))
     }
 
+    @GetMapping("/{restaurantId}/products/{productId}/availability")
+    fun getProductAvailability(
+        @PathVariable restaurantId: Int,
+        @PathVariable productId: Int
+    ): Mono<ProductAvailabilityResponse> {
+        return restaurantProductService.isProductAvailableInRestaurant(restaurantId, productId)
+            .map { ProductAvailabilityResponse(it) }
+    }
+
+    @DeleteMapping("/{restaurantId}/products/{productId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun removeProductFromRestaurant(
+        @PathVariable restaurantId: Int,
+        @PathVariable productId: Int
+    ): Mono<Void> {
+        return restaurantProductService.removeProductFromRestaurant(restaurantId, productId)
+    }
 }

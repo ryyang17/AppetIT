@@ -7,6 +7,7 @@ import nl.appetit.api.logic.repository.RestaurantRepository
 import nl.appetit.api.presentation.dto.restaurant.RestaurantProductResponse
 import nl.appetit.api.presentation.mapper.RestaurantProductMapper
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.math.BigDecimal
@@ -44,28 +45,47 @@ class RestaurantProductService(
     }
 
     // Update de beschikbaarheid van een product in een restaurant
+    @Transactional
     fun updateProductAvailability(
         restaurantId: Int,
         productId: Int,
         isAvailable: Boolean
     ): Mono<Void> {
-        return restaurantProductRepository.updateAvailability(restaurantId, productId, isAvailable)
+        return restaurantProductRepository.findByRestaurantIdAndProductId(restaurantId, productId)
+            .switchIfEmpty(Mono.error(RuntimeException("Restaurant product combination not found: restaurantId=$restaurantId, productId=$productId")))
+            .flatMap {
+                restaurantProductRepository.updateAvailability(restaurantId, productId, isAvailable)
+            }
     }
 
     // Update de aangepaste prijs voor een product in een restaurant
+    @Transactional
     fun updateProductPrice(
         restaurantId: Int,
         productId: Int,
         customPrice: BigDecimal?
     ): Mono<Void> {
-        return restaurantProductRepository.updateCustomPrice(restaurantId, productId, customPrice)
+        return restaurantProductRepository.findByRestaurantIdAndProductId(restaurantId, productId)
+            .switchIfEmpty(Mono.error(RuntimeException("Restaurant product combination not found: restaurantId=$restaurantId, productId=$productId")))
+            .flatMap {
+                restaurantProductRepository.updateCustomPrice(restaurantId, productId, customPrice)
+            }
+    }
+
+    // Verwijder de koppeling tussen een product en restauranty
+    fun removeProductFromRestaurant(restaurantId: Int, productId: Int): Mono<Void> {
+        return restaurantProductRepository.deleteByRestaurantIdAndProductId(restaurantId, productId)
     }
 
     // Controleer of een product beschikbaar is in een restaurant
     fun isProductAvailableInRestaurant(restaurantId: Int, productId: Int): Mono<Boolean> {
         return restaurantProductRepository.findByRestaurantIdAndProductId(restaurantId, productId)
-            .map { it.isAvailable }
-            .defaultIfEmpty(false)
+            .flatMap { restaurantProduct ->
+                productRepository.findById(productId)
+                    .map { product -> product.isAvailable && restaurantProduct.isAvailable }
+                    .defaultIfEmpty(false) // Handle case where product doesn't exist
+            }
+            .defaultIfEmpty(false) // Handle case where restaurant-product relation doesn't exist
     }
 
     // Koppel alle bestaande producten aan een nieuw restaurant
@@ -111,5 +131,6 @@ class RestaurantProductService(
                     RestaurantProductMapper.toResponse(restaurantProduct, product, restaurant)
                 }
             }
+            .filter { response -> response.isAvailable } // Filter out products that are globally unavailable
     }
 }

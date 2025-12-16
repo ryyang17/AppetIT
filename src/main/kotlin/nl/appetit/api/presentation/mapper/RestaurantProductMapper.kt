@@ -20,7 +20,7 @@ object RestaurantProductMapper {
             productName = product.name,
             basePrice = product.price,
             customPrice = entity.customPrice,
-            isAvailable = entity.isAvailable,
+            isAvailable = product.isAvailable && entity.isAvailable, // Both global AND restaurant availability
             restaurantId = restaurant.id!!,
             restaurantName = restaurant.name
         )
