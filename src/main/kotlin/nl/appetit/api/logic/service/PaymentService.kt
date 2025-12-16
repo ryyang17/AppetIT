@@ -1,8 +1,10 @@
 package nl.appetit.api.logic.service
 
-import nl.appetit.api.logic.model.Payment
+import nl.appetit.api.data.entity.TablePaymentEntity
+import nl.appetit.api.data.entity.TablePaymentOrderEntity
 import nl.appetit.api.logic.repository.OrderRepository
-import nl.appetit.api.logic.repository.PaymentRepository
+import nl.appetit.api.data.repository.TablePaymentOrderR2dbcRepository
+import nl.appetit.api.data.repository.TablePaymentR2dbcRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
@@ -12,9 +14,10 @@ import java.time.Instant
 
 @Service
 class PaymentService(
-    private val paymentRepository: PaymentRepository,
     private val orderRepository: OrderRepository,
-    private val orderService: OrderService
+    private val orderService: OrderService,
+    private val tablePaymentRepository: TablePaymentR2dbcRepository,
+    private val tablePaymentOrderRepository: TablePaymentOrderR2dbcRepository
 ) {
 
     private val logger = LoggerFactory.getLogger(PaymentService::class.java)
@@ -47,56 +50,65 @@ class PaymentService(
 
                 val now = Instant.now()
 
-                val paymentsFlux: Flux<Payment> = Flux.fromIterable(readyOrders)
-                    .flatMap { order ->
-                        val amount = order.totalAmount ?: BigDecimal.ZERO
+                // First compute the total amount for all READY orders
+                val totalAmount = readyOrders.fold(BigDecimal.ZERO) { acc, order ->
+                    acc + (order.totalAmount ?: BigDecimal.ZERO)
+                }
 
-                        val payment = Payment(
-                            orderId = order.id
-                                ?: throw IllegalStateException("Order without id can not be paid"),
-                            paymentMethod = paymentMethod,
-                            amount = amount,
-                            status = "PAID",
-                            idealTransactionId = null,
-                            createdAt = now,
-                            updatedAt = now,
-                            completedAt = now
-                        )
+                // Create one TablePayment record for this table
+                tablePaymentRepository.save(
+                    TablePaymentEntity(
+                        tableId = tableId,
+                        totalAmount = totalAmount,
+                        paymentMethod = paymentMethod,
+                        status = "PAID",
+                        createdAt = now
+                    )
+                ).flatMap { tablePayment ->
+                    val tablePaymentId = tablePayment.id
+                        ?: throw IllegalStateException("TablePayment without id cannot be persisted correctly")
 
-                        paymentRepository.save(payment)
-                    }
-
-                paymentsFlux
-                    .collectList()
-                    .flatMap { payments ->
-                        val totalAmount = payments.fold(BigDecimal.ZERO) { acc, p -> acc + p.amount }
-
-                        // After creating all payments, mark the orders as COMPLETED
-                        orderService.completeOrdersForTable(tableId)
-                            .map { completeResult ->
-                                logger.info(
-                                    "Created {} payments (total {}) and completed {} orders for table {}",
-                                    payments.size,
-                                    totalAmount,
-                                    completeResult["completedCount"],
-                                    tableId
-                                )
-
-                                mapOf(
-                                    "tableId" to tableId,
-                                    "paymentCount" to payments.size,
-                                    "totalAmount" to totalAmount,
-                                    "completedCount" to completeResult["completedCount"],
-                                    "message" to "Payments created and orders completed successfully"
+                    // Create link records between this table payment and each order
+                    val linksFlux: Flux<TablePaymentOrderEntity> =
+                        Flux.fromIterable(readyOrders)
+                            .flatMap { order ->
+                                val orderId = order.id
+                                    ?: throw IllegalStateException("Order without id can not be paid")
+                                tablePaymentOrderRepository.save(
+                                    TablePaymentOrderEntity(
+                                        tablePaymentId = tablePaymentId,
+                                        orderId = orderId
+                                    )
                                 )
                             }
-                    }
+
+                    linksFlux
+                        .collectList()
+                        .flatMap { links ->
+                            // After creating the table payment + links, mark the orders as COMPLETED
+                            orderService.completeOrdersForTable(tableId)
+                                .map { completeResult ->
+                                    logger.info(
+                                        "Created table payment {} for table {} with {} orders (total {}) and completed {} orders",
+                                        tablePaymentId,
+                                        tableId,
+                                        links.size,
+                                        totalAmount,
+                                        completeResult["completedCount"]
+                                    )
+
+                                    mapOf(
+                                        "tableId" to tableId,
+                                        "tablePaymentId" to tablePaymentId,
+                                        "orderCount" to links.size,
+                                        "totalAmount" to totalAmount,
+                                        "completedCount" to completeResult["completedCount"],
+                                        "message" to "Table payment created and orders completed successfully"
+                                    )
+                                }
+                        }
+                }
             }
     }
-
-    fun listPayments(): Flux<Payment> = paymentRepository.findAll()
-
-    fun listPaymentsForTable(tableId: Int): Flux<Payment> =
-        paymentRepository.findByTableId(tableId)
 }
 

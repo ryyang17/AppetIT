@@ -1,5 +1,7 @@
 package nl.appetit.api.presentation.controller
 
+import nl.appetit.api.data.repository.TablePaymentOrderR2dbcRepository
+import nl.appetit.api.data.repository.TablePaymentR2dbcRepository
 import nl.appetit.api.logic.repository.OrderRepository
 import nl.appetit.api.logic.service.PaymentService
 import nl.appetit.api.presentation.dto.payment.PaymentRequest
@@ -19,7 +21,9 @@ import reactor.core.publisher.Mono
 @RequestMapping("/payments")
 class PaymentController(
     private val paymentService: PaymentService,
-    private val orderRepository: OrderRepository
+    private val orderRepository: OrderRepository,
+    private val tablePaymentRepository: TablePaymentR2dbcRepository,
+    private val tablePaymentOrderRepository: TablePaymentOrderR2dbcRepository
 ) {
 
     private val logger = LoggerFactory.getLogger(PaymentController::class.java)
@@ -48,11 +52,54 @@ class PaymentController(
     @GetMapping
     fun listPayments(): Flux<PaymentResponse> {
         logger.info("GET /payments called")
-        return paymentService.listPayments()
-            .flatMap { payment ->
-                orderRepository.findById(payment.orderId)
-                    .map { order -> PaymentMapper.toResponse(payment, order) }
-                    .switchIfEmpty(Mono.just(PaymentMapper.toResponse(payment, null)))
+        return tablePaymentRepository.findAllOrderByCreatedAtDesc()
+            .flatMap { tablePayment ->
+                tablePaymentOrderRepository.findByTablePaymentId(tablePayment.id!!)
+                    .flatMap { link ->
+                        orderRepository.findById(link.orderId)
+                    }
+                    .flatMap { order ->
+                        // Reuse existing mapper chain to convert Order -> OrderResponse
+                        // by leveraging OrderService enrichment behaviour would be ideal,
+                        // but to keep dependencies simple we call through OrderController mappers.
+                        // For now, we map only basic order fields via a minimal OrderResponse constructor.
+                        // However, to keep this change focused, we'll retrieve enriched responses
+                        // via OrderService if needed in a follow-up.
+                        Mono.just(
+                            nl.appetit.api.presentation.mapper.OrderMapper.toResponse(order, null)
+                        )
+                    }
+                    .collectList()
+                    .map { orderResponses ->
+                        PaymentMapper.toResponse(tablePayment, orderResponses)
+                    }
+            }
+    }
+
+    /**
+     * Get a single payment (table payment) by id, including its related orders.
+     */
+    @GetMapping("/{id}")
+    fun getPaymentById(
+        @PathVariable id: Int
+    ): Mono<PaymentResponse> {
+        logger.info("GET /payments/{} called", id)
+        return tablePaymentRepository.findById(id)
+            .switchIfEmpty(Mono.error(nl.appetit.api.logic.exception.NotFoundException("Table payment $id not found")))
+            .flatMap { tablePayment ->
+                tablePaymentOrderRepository.findByTablePaymentId(tablePayment.id!!)
+                    .flatMap { link ->
+                        orderRepository.findById(link.orderId)
+                    }
+                    .flatMap { order ->
+                        Mono.just(
+                            nl.appetit.api.presentation.mapper.OrderMapper.toResponse(order, null)
+                        )
+                    }
+                    .collectList()
+                    .map { orderResponses ->
+                        PaymentMapper.toResponse(tablePayment, orderResponses)
+                    }
             }
     }
 
@@ -64,11 +111,21 @@ class PaymentController(
         @PathVariable tableId: Int
     ): Flux<PaymentResponse> {
         logger.info("GET /payments/table/{} called", tableId)
-        return paymentService.listPaymentsForTable(tableId)
-            .flatMap { payment ->
-                orderRepository.findById(payment.orderId)
-                    .map { order -> PaymentMapper.toResponse(payment, order) }
-                    .switchIfEmpty(Mono.just(PaymentMapper.toResponse(payment, null)))
+        return tablePaymentRepository.findByTableIdOrderByCreatedAtDesc(tableId)
+            .flatMap { tablePayment ->
+                tablePaymentOrderRepository.findByTablePaymentId(tablePayment.id!!)
+                    .flatMap { link ->
+                        orderRepository.findById(link.orderId)
+                    }
+                    .flatMap { order ->
+                        Mono.just(
+                            nl.appetit.api.presentation.mapper.OrderMapper.toResponse(order, null)
+                        )
+                    }
+                    .collectList()
+                    .map { orderResponses ->
+                        PaymentMapper.toResponse(tablePayment, orderResponses)
+                    }
             }
     }
 }

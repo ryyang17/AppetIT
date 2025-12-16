@@ -1,17 +1,19 @@
 package nl.appetit.api.presentation.dto.payment
 
+import nl.appetit.api.presentation.dto.order.OrderResponse
 import java.math.BigDecimal
 import java.time.Instant
 
+/**
+ * Represents a payment per table (TablePayment) including all related orders.
+ */
 data class PaymentResponse(
     val id: Int?,
-    val orderId: Int,
     val tableId: Int?,
+    val totalAmount: BigDecimal,
     val paymentMethod: String?,
-    val amount: BigDecimal,
     val status: String?,
-    val idealTransactionId: String?,
     val createdAt: Instant,
-    val completedAt: Instant?
+    val orders: List<OrderResponse>
 )
 

@@ -16,6 +16,8 @@ import nl.appetit.api.data.repository.TableR2dbcRepository
 import nl.appetit.api.data.repository.OrderR2dbcRepository
 import nl.appetit.api.data.repository.OrderItemR2dbcRepository
 import nl.appetit.api.data.repository.EmployeeR2dbcRepository
+import nl.appetit.api.data.repository.TablePaymentOrderR2dbcRepository
+import nl.appetit.api.data.repository.TablePaymentR2dbcRepository
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
@@ -38,6 +40,8 @@ class DataSeeder(
     private val orderR2dbcRepository: OrderR2dbcRepository,
     private val orderItemR2dbcRepository: OrderItemR2dbcRepository,
     private val employeeR2dbcRepository: EmployeeR2dbcRepository,
+    private val tablePaymentOrderR2dbcRepository: TablePaymentOrderR2dbcRepository,
+    private val tablePaymentR2dbcRepository: TablePaymentR2dbcRepository,
     private val databaseClient: DatabaseClient
 ) : CommandLineRunner {
 
@@ -54,7 +58,14 @@ class DataSeeder(
         
         // Delete all existing data in correct order (respecting foreign key constraints)
         logger.info("Deleting all existing data...")
-        // First delete dependent data (orders, order items)
+        // First delete dependent data (table payments, orders, order items)
+        try {
+            tablePaymentOrderR2dbcRepository.deleteAll().block()
+            tablePaymentR2dbcRepository.deleteAll().block()
+        } catch (e: Exception) {
+            logger.warn("Failed to delete table payment data (this is OK on first run before migration): {}", e.message)
+        }
+        // Then delete orders and order items
         orderItemR2dbcRepository.deleteAll().block()
         orderR2dbcRepository.deleteAll().block()
         // Delete products (CASCADE will automatically delete product_tag records)
@@ -79,6 +90,9 @@ class DataSeeder(
             resetSequence("translations_translation_id_seq", 1).block()
             resetSequence("table_table_id_seq", 1).block()
             resetSequence("restaurant_restaurant_id_seq", 1).block()
+            // New payment-related tables
+            resetSequence("table_payment_table_payment_id_seq", 1).block()
+            resetSequence("table_payment_order_id_seq", 1).block()
             logger.info("Sequences reset successfully - all IDs will start from 1")
         } catch (e: Exception) {
             logger.warn("Failed to reset some sequences (this is OK if tables don't exist yet): {}", e.message)
