@@ -23,7 +23,7 @@ class RestaurantProductService(
         restaurantId: Int,
         productId: Int,
         customPrice: BigDecimal? = null,
-        isAvailable: Boolean = true
+        isAvailable: Boolean
     ): Mono<RestaurantProductEntity> {
         val entity = RestaurantProductEntity(
             restaurantId = restaurantId,
