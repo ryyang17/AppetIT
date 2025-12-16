@@ -4,10 +4,14 @@ import nl.appetit.api.data.repository.TablePaymentOrderR2dbcRepository
 import nl.appetit.api.data.repository.TablePaymentR2dbcRepository
 import nl.appetit.api.logic.repository.OrderRepository
 import nl.appetit.api.logic.service.PaymentService
+import nl.appetit.api.logic.service.ReceiptService
 import nl.appetit.api.presentation.dto.payment.PaymentRequest
 import nl.appetit.api.presentation.dto.payment.PaymentResponse
 import nl.appetit.api.presentation.mapper.PaymentMapper
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -23,7 +27,8 @@ class PaymentController(
     private val paymentService: PaymentService,
     private val orderRepository: OrderRepository,
     private val tablePaymentRepository: TablePaymentR2dbcRepository,
-    private val tablePaymentOrderRepository: TablePaymentOrderR2dbcRepository
+    private val tablePaymentOrderRepository: TablePaymentOrderR2dbcRepository,
+    private val receiptService: ReceiptService,
 ) {
 
     private val logger = LoggerFactory.getLogger(PaymentController::class.java)
@@ -126,6 +131,26 @@ class PaymentController(
                     .map { orderResponses ->
                         PaymentMapper.toResponse(tablePayment, orderResponses)
                     }
+            }
+    }
+
+    /**
+     * Generate a simple PDF receipt for a specific table payment.
+     */
+    @GetMapping("/{id}/receipt")
+    fun getReceipt(
+        @PathVariable id: Int
+    ): Mono<ResponseEntity<ByteArray>> {
+        logger.info("GET /payments/{}/receipt called", id)
+        return receiptService.generateReceiptForTablePayment(id)
+            .map { bytes ->
+                ResponseEntity.ok()
+                    .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=receipt-$id.pdf",
+                    )
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(bytes)
             }
     }
 }

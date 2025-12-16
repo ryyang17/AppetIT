@@ -43,6 +43,9 @@ dependencies {
 	implementation(libs.flyway.database.postgresql)
 	implementation(libs.postgresql)
 
+    // --- PDF generation for receipts ---
+    implementation("com.github.librepdf:openpdf:1.3.39")
+
 	testImplementation(libs.spring.boot.starter.webflux.test)
 	testImplementation(libs.kotlin.test.junit5)
     testImplementation(libs.mockito.core)
