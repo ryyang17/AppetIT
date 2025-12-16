@@ -13,13 +13,19 @@ import nl.appetit.api.data.repository.ProductTagR2dbcRepository
 import nl.appetit.api.data.repository.TranslationR2dbcRepository
 import nl.appetit.api.data.repository.RestaurantR2dbcRepository
 import nl.appetit.api.data.repository.TableR2dbcRepository
+import nl.appetit.api.data.repository.OrderR2dbcRepository
+import nl.appetit.api.data.repository.OrderItemR2dbcRepository
+import nl.appetit.api.data.repository.EmployeeR2dbcRepository
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
 import org.springframework.context.annotation.Profile
+import org.springframework.core.annotation.Order
+import org.springframework.r2dbc.core.DatabaseClient
 import java.math.BigDecimal
 
 @Profile("!prod")
+@Order(1) // Run first, before OrderTestDataSeeder
 @Component
 class DataSeeder(
     private val categoryR2dbcRepository: CategoryR2dbcRepository,
@@ -28,22 +34,57 @@ class DataSeeder(
     private val productTagR2dbcRepository: ProductTagR2dbcRepository,
     private val translationR2dbcRepository: TranslationR2dbcRepository,
     private val restaurantR2dbcRepository: RestaurantR2dbcRepository,
-    private val tableR2dbcRepository: TableR2dbcRepository
+    private val tableR2dbcRepository: TableR2dbcRepository,
+    private val orderR2dbcRepository: OrderR2dbcRepository,
+    private val orderItemR2dbcRepository: OrderItemR2dbcRepository,
+    private val employeeR2dbcRepository: EmployeeR2dbcRepository,
+    private val databaseClient: DatabaseClient
 ) : CommandLineRunner {
 
     private val logger = LoggerFactory.getLogger(DataSeeder::class.java)
 
+    init {
+        logger.info("DataSeeder component initialized and ready to run")
+    }
+
     override fun run(vararg args: String) {
-        logger.info("Starting data seeding...")
+        logger.info("=".repeat(60))
+        logger.info("DataSeeder.run() called - Starting data seeding...")
+        logger.info("=".repeat(60))
         
-        // Delete all existing data
+        // Delete all existing data in correct order (respecting foreign key constraints)
         logger.info("Deleting all existing data...")
+        // First delete dependent data (orders, order items)
+        orderItemR2dbcRepository.deleteAll().block()
+        orderR2dbcRepository.deleteAll().block()
+        // Delete products (CASCADE will automatically delete product_tag records)
         productR2dbcRepository.deleteAll().block()
         categoryR2dbcRepository.deleteAll().block()
         tagR2dbcRepository.deleteAll().block()
         translationR2dbcRepository.deleteAll().block()
+        // Delete tables (but keep restaurants and employees for demo purposes)
         tableR2dbcRepository.deleteAll().block()
-        logger.info("Data deleted successfully")
+        // Also delete restaurants to ensure clean state (will be recreated if needed)
+        restaurantR2dbcRepository.deleteAll().block()
+        
+        // Reset all sequences to start from 1
+        // PostgreSQL auto-generates sequence names as: {table}_{column}_seq
+        logger.info("Resetting sequences to start from 1...")
+        try {
+            resetSequence("order_item_order_item_id_seq", 1).block()
+            resetSequence("order_order_id_seq", 1).block()
+            resetSequence("product_product_id_seq", 1).block()
+            resetSequence("category_category_id_seq", 1).block()
+            resetSequence("tag_tag_id_seq", 1).block()
+            resetSequence("translations_translation_id_seq", 1).block()
+            resetSequence("table_table_id_seq", 1).block()
+            resetSequence("restaurant_restaurant_id_seq", 1).block()
+            logger.info("Sequences reset successfully - all IDs will start from 1")
+        } catch (e: Exception) {
+            logger.warn("Failed to reset some sequences (this is OK if tables don't exist yet): {}", e.message)
+        }
+        
+        logger.info("Data deleted successfully - starting with clean data (IDs starting from 1)")
         
         // Seed categories with hierarchy
         val categoryMap = seedCategories()
@@ -630,5 +671,11 @@ class DataSeeder(
 
         val savedTables = tableR2dbcRepository.saveAll(tables).collectList().block()!!
         logger.info("${savedTables.size} tables seeded successfully for ${restaurantList.size} restaurant(s)")
+    }
+
+    private fun resetSequence(sequenceName: String, startValue: Long): reactor.core.publisher.Mono<Long> {
+        return databaseClient.sql("ALTER SEQUENCE $sequenceName RESTART WITH $startValue")
+            .fetch()
+            .rowsUpdated()
     }
 }
