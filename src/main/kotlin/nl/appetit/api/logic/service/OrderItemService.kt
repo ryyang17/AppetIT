@@ -97,4 +97,28 @@ class OrderItemService(
     fun deleteOrderItemById(id: Int): Mono<Void> = db.deleteById(id)
 
     fun deleteAllOrderItems(): Mono<Void> = db.deleteAll()
+
+    fun assignStaff(id: Int, staffId: Int?): Mono<OrderItemResponse> =
+        db.assignStaff(id, staffId)
+            .flatMap { updated ->
+                val productId = updated.productId
+                if (productId == null) {
+                    // geen product? gewoon mappen zonder product
+                    Mono.just(
+                        nl.appetit.api.presentation.mapper.OrderItemMapper.toResponse(updated, null)
+                    )
+                } else {
+                    // product bestaat -> ophalen en meesturen
+                    productRepository.findById(productId)
+                        .map { product ->
+                            nl.appetit.api.presentation.mapper.OrderItemMapper.toResponse(
+                                updated,
+                                nl.appetit.api.presentation.mapper.ProductMapper.toResponse(product)
+                            )
+                        }
+                        .defaultIfEmpty(
+                            nl.appetit.api.presentation.mapper.OrderItemMapper.toResponse(updated, null)
+                        )
+                }
+            }
 }
