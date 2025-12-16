@@ -27,6 +27,7 @@ dependencies {
     // --- Core Spring Boot + Kotlin ---
 	implementation(libs.spring.boot.starter)
     implementation(libs.spring.boot.starter.webflux)
+    implementation(libs.spring.boot.starter.rsocket)
 	implementation(libs.kotlin.reflect)
 	// --- Hot-reload ---
 	developmentOnly(libs.spring.boot.devtools)
@@ -41,6 +42,9 @@ dependencies {
 	implementation(libs.flyway.core)
 	implementation(libs.flyway.database.postgresql)
 	implementation(libs.postgresql)
+
+    // --- PDF generation for receipts ---
+    implementation("com.github.librepdf:openpdf:1.3.39")
 
 	testImplementation(libs.spring.boot.starter.webflux.test)
 	testImplementation(libs.kotlin.test.junit5)

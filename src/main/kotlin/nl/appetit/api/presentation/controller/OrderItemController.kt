@@ -1,9 +1,9 @@
 package nl.appetit.api.presentation.controller
 
-import nl.appetit.api.logic.model.OrderItem
 import nl.appetit.api.logic.service.OrderItemService
 import nl.appetit.api.presentation.dto.order_item.OrderItemRequest
 import nl.appetit.api.presentation.dto.order_item.OrderItemResponse
+import nl.appetit.api.presentation.dto.order_item.AssignStaffRequest
 import nl.appetit.api.presentation.mapper.OrderItemMapper
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
@@ -16,19 +16,17 @@ class OrderItemController(
 ) {
 
     @GetMapping
-    fun list(): Flux<OrderItemResponse> = service.getAllOrderItems()
-        .map(OrderItemMapper::toResponse)
+    fun list(): Flux<OrderItemResponse> = service.getAllOrderItemsWithProducts()
 
     @GetMapping("/order/{orderId}")
     fun listByOrder(@PathVariable orderId: Int): Flux<OrderItemResponse> =
-        service.getItemsByOrder(orderId)
-            .map(OrderItemMapper::toResponse)
+        service.getItemsByOrderWithProducts(orderId)
 
     @PostMapping
     fun insert(@RequestBody request: Mono<OrderItemRequest>): Mono<OrderItemResponse> =
         request.flatMap { orderItem ->
             service.insertOrderItem(OrderItemMapper.toModel(orderItem))
-                .map(OrderItemMapper::toResponse)
+                .map { savedItem -> OrderItemMapper.toResponse(savedItem) }
         }
 
     @DeleteMapping("/{id}")
@@ -36,4 +34,11 @@ class OrderItemController(
 
     @DeleteMapping
     fun deleteAll(): Mono<Void> = service.deleteAllOrderItems()
+
+    @PatchMapping("/{id}")
+    fun assignStaff(
+        @PathVariable id: Int,
+        @RequestBody body: AssignStaffRequest
+    ): Mono<OrderItemResponse> =
+        service.assignStaff(id, body.staffId)
 }

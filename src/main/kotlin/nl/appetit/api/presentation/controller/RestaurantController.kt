@@ -29,7 +29,6 @@ class RestaurantController(
     @PostMapping
     fun save(@RequestBody request: Mono<CreateRestaurantRequest>): Mono<RestaurantResponse> {
         return request.flatMap { restaurantRequest ->
-            val test = restaurantRequest
             restaurantService.save(RestaurantMapper.toModel(restaurantRequest))
                 .map(RestaurantMapper::toResponse)
         }

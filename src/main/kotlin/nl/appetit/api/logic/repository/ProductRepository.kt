@@ -8,6 +8,7 @@ import reactor.core.publisher.Mono
 interface ProductRepository {
     fun findAll(): Flux<Product>
     fun findById(id: Int): Mono<Product>
+    fun findAllById(ids: Iterable<Int>): Flux<Product>
     fun save(product: Product): Mono<Product>
     fun findAllByCategoryId(categoryId: Int): Flux<Product>
     fun deleteById(id: Int): Mono<Void>

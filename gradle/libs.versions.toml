@@ -1,5 +1,5 @@
 [versions]
-spring-boot = "4.0.0-RC1"
+spring-boot = "4.0.0"
 spring-dependency-management = "1.1.7"
 kotlin = "2.2.0"
 springdoc-openapi = "2.8.13"
@@ -21,6 +21,7 @@ spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter",
 spring-boot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot" }
 spring-boot-devtools = { module = "org.springframework.boot:spring-boot-devtools", version.ref = "spring-boot" }
 spring-boot-starter-data-r2dbc = { module = "org.springframework.boot:spring-boot-starter-data-r2dbc", version.ref = "spring-boot" }
+spring-boot-starter-rsocket = { module = "org.springframework.boot:spring-boot-starter-rsocket", version.ref = "spring-boot" }
 
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 springdoc-openapi-starter-webflux = { module = "org.springdoc:springdoc-openapi-starter-webflux-ui", version.ref = "springdoc-openapi" }

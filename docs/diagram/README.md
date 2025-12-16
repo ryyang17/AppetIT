@@ -47,6 +47,17 @@ Overview of all API endpoints organized by controller:
 
 **Use case**: Quick reference for available endpoints and their purposes.
 
+### 5. API Component Structure Diagram (C4)
+**File**: `api-component-structure.puml`
+
+C4 Component diagram showing the internal structure of the AppetIT API:
+- Presentation Layer (Controllers, DTOs, Mappers)
+- Business Logic Layer (Services, Domain Models)
+- Data Access Layer (Repository Implementations, R2DBC Repositories, Entities)
+- Configuration Layer (CORS, Flyway, Data Seeder)
+
+**Use case**: Understanding the layered architecture and component relationships within the API application. Based on the C4 model component diagram standard.
+
 ## Viewing the Diagrams
 
 ### Option 1: VS Code Extension
@@ -100,6 +111,7 @@ When making changes to the system:
 2. **API changes**: Update `api-endpoints.puml`
 3. **Database changes**: Update `database-schema.puml`
 4. **Process changes**: Update `tag-filtering-data-flow.puml`
+5. **Component structure changes**: Update `api-component-structure.puml`
 
 ## Related Documentation
 
