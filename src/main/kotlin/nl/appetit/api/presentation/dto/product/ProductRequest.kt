@@ -9,6 +9,6 @@ data class ProductRequest(
     val description: String? = null,
     val imageUrl: String? = null,
     @JsonAlias("available")
-    val isAvailable: Boolean,
+    val isAvailable: Boolean = true,
     val categoryId: Int? = null
 )

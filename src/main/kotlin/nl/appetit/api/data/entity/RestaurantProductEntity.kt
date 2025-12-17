@@ -19,10 +19,10 @@ data class RestaurantProductEntity(
     val productId: Int,
 
     @Column("custom_price")
-    val customPrice: BigDecimal? = null, // Restaurant kan eigen prijs instellen
+    val customPrice: BigDecimal? = null,
 
     @Column("is_available")
-    val isAvailable: Boolean = true, // Restaurant kan product tijdelijk uitschakelen
+    val isAvailable: Boolean,
 
     @Column("created_at")
     val createdAt: Instant = Instant.now(),

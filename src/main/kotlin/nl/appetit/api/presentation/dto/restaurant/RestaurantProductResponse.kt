@@ -11,3 +11,4 @@ data class RestaurantProductResponse(
     val restaurantId: Int,
     val restaurantName: String
 )
+
