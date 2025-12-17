@@ -21,6 +21,9 @@ class OrderItemRepositoryImpl(
         db.findAllByOrderId(orderId)
             .map(OrderItemMapper::toModel)
 
+    override fun findById(id: Int): Mono<OrderItem> =
+        db.findById(id).map(OrderItemMapper::toModel)
+
     override fun save(item: OrderItem): Mono<OrderItem> =
         db.save(OrderItemMapper.toEntity(item))
             .map(OrderItemMapper::toModel)
@@ -30,4 +33,12 @@ class OrderItemRepositoryImpl(
 
     override fun deleteAll(): Mono<Void> =
         db.deleteAll()
+
+    override fun assignStaff(itemId: Int, staffId: Int?): Mono<OrderItem> =
+        db.findById(itemId)
+            .flatMap { entity ->
+                val updated = entity.copy(staffId = staffId)
+                db.save(updated)
+            }
+            .map(OrderItemMapper::toModel)
 }

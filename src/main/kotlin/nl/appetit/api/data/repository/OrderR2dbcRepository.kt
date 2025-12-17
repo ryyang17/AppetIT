@@ -34,4 +34,10 @@ interface OrderR2dbcRepository : ReactiveCrudRepository<OrderEntity, Int> {
         restaurantId: Int,
         categoryName: String
     ): Flux<OrderEntity>
+    
+    @Query("SELECT * FROM \"order\" WHERE status = :status")
+    fun findByStatus(status: String): Flux<OrderEntity>
+    
+    @Query("SELECT * FROM \"order\" WHERE table_id = :tableId AND status = :status")
+    fun findByTableIdAndStatus(tableId: Int, status: String): Flux<OrderEntity>
 }

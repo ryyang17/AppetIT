@@ -44,6 +44,38 @@ class OrderService(
         db.findByRestaurantIdAndCategoryName(restaurantId, categoryName)
 
     /**
+     * Get orders by status with table data included
+     */
+    fun findByStatusWithTableData(status: String): Flux<OrderResponse> {
+        org.slf4j.LoggerFactory.getLogger(OrderService::class.java)
+            .info("Finding orders with status: {}", status)
+        return db.findByStatus(status)
+            .doOnNext { order ->
+                org.slf4j.LoggerFactory.getLogger(OrderService::class.java)
+                    .debug("Found order: id={}, status={}, tableId={}", order.id, order.status, order.tableId)
+            }
+            .flatMap { order ->
+                enrichOrderWithTableData(order)
+            }
+            .doOnComplete {
+                org.slf4j.LoggerFactory.getLogger(OrderService::class.java)
+                    .info("Completed finding orders with status: {}", status)
+            }
+            .doOnError { error ->
+                org.slf4j.LoggerFactory.getLogger(OrderService::class.java)
+                    .error("Error finding orders with status {}: {}", status, error.message, error)
+            }
+    }
+
+    /**
+     * Get orders by table ID and status with table data included
+     */
+    fun findByTableIdAndStatusWithTableData(tableId: Int, status: String): Flux<OrderResponse> =
+        db.findByTableIdAndStatus(tableId, status).flatMap { order ->
+            enrichOrderWithTableData(order)
+        }
+
+    /**
      * Helper method to enrich an order with its table data
      */
     private fun enrichOrderWithTableData(order: Order): Mono<OrderResponse> {
@@ -101,6 +133,25 @@ class OrderService(
             }
             .flatMap { savedOrder ->
                 enrichOrderWithTableData(savedOrder)
+            }
+    }
+
+    fun completeOrdersForTable(tableId: Int): Mono<Map<String, Any>> {
+        return db.findByTableIdAndStatus(tableId, "READY")
+            .flatMap { order ->
+                val completedOrder = order.copy(
+                    status = "COMPLETED",
+                    completedAt = java.time.Instant.now()
+                )
+                db.save(completedOrder)
+            }
+            .collectList()
+            .map { completedOrders ->
+                mapOf(
+                    "tableId" to tableId,
+                    "completedCount" to completedOrders.size,
+                    "message" to "Orders completed successfully"
+                )
             }
     }
 }
