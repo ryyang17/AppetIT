@@ -6,6 +6,7 @@ import nl.appetit.api.data.entity.TagEntity
 import nl.appetit.api.data.entity.TranslationEntity
 import nl.appetit.api.data.entity.TableEntity
 import nl.appetit.api.data.entity.RestaurantEntity
+import nl.appetit.api.data.entity.EmployeeEntity
 import nl.appetit.api.data.repository.CategoryR2dbcRepository
 import nl.appetit.api.data.repository.ProductR2dbcRepository
 import nl.appetit.api.data.repository.TagR2dbcRepository
@@ -73,8 +74,14 @@ class DataSeeder(
         categoryR2dbcRepository.deleteAll().block()
         tagR2dbcRepository.deleteAll().block()
         translationR2dbcRepository.deleteAll().block()
-        // Delete tables (but keep restaurants and employees for demo purposes)
+        // Delete tables
         tableR2dbcRepository.deleteAll().block()
+        // Delete employees (will be recreated by seedEmployees)
+        try {
+            employeeR2dbcRepository.deleteAll().block()
+        } catch (e: Exception) {
+            logger.warn("Failed to delete employees (this is OK on first run before migration): {}", e.message)
+        }
         // Also delete restaurants to ensure clean state (will be recreated if needed)
         restaurantR2dbcRepository.deleteAll().block()
         
@@ -93,6 +100,12 @@ class DataSeeder(
             // New payment-related tables
             resetSequence("table_payment_table_payment_id_seq", 1).block()
             resetSequence("table_payment_order_id_seq", 1).block()
+            // Reset employee sequence
+            try {
+                resetSequence("staff_staff_id_seq", 1).block()
+            } catch (e: Exception) {
+                logger.warn("Failed to reset staff_staff_id_seq (this is OK if table doesn't exist yet): {}", e.message)
+            }
             logger.info("Sequences reset successfully - all IDs will start from 1")
         } catch (e: Exception) {
             logger.warn("Failed to reset some sequences (this is OK if tables don't exist yet): {}", e.message)
@@ -117,6 +130,9 @@ class DataSeeder(
 
         // Seed tables (1..10) for each restaurant (create a demo restaurant if none exist)
         seedTables()
+
+        // Seed employees for restaurants
+        seedEmployees()
 
         logger.info("Data seeding completed!")
     }
@@ -685,6 +701,149 @@ class DataSeeder(
 
         val savedTables = tableR2dbcRepository.saveAll(tables).collectList().block()!!
         logger.info("${savedTables.size} tables seeded successfully for ${restaurantList.size} restaurant(s)")
+    }
+
+    private fun seedEmployees() {
+        try {
+            logger.info("Seeding employees for restaurants...")
+
+            val restaurants = restaurantR2dbcRepository.findAll().collectList().block() ?: emptyList()
+            val restaurantId = restaurants.firstOrNull()?.id
+
+            if (restaurantId == null) {
+                logger.warn("No restaurants found. Cannot seed employees without a restaurant.")
+                return
+            }
+
+            // Check if employees already exist (for idempotency, but normally they should be deleted by cleanup)
+            val existingEmployees = employeeR2dbcRepository.findAll().collectList().block() ?: emptyList()
+            if (existingEmployees.isNotEmpty()) {
+                logger.info("Employees already exist (${existingEmployees.size}). Skipping employee seeding.")
+                logger.info("Note: If you want to reseed employees, delete them first or truncate the staff table.")
+                return
+            }
+
+            val employees = mutableListOf<EmployeeEntity>()
+
+            // Nederlandse namen met verschillende rollen voor AppetIT
+            // Manager (alleen 1)
+            employees.add(EmployeeEntity(
+                firstName = "Jan",
+                lastName = "van der Berg",
+                personnelNumber = 1001,
+                restaurantId = restaurantId,
+                role = "MANAGER",
+                active = true
+            ))
+
+            // Kitchen Chefs
+            employees.add(EmployeeEntity(
+                firstName = "Marieke",
+                lastName = "de Vries",
+                personnelNumber = 2001,
+                restaurantId = restaurantId,
+                role = "KITCHEN_CHEF",
+                active = true
+            ))
+            employees.add(EmployeeEntity(
+                firstName = "Daan",
+                lastName = "Jansen",
+                personnelNumber = 2002,
+                restaurantId = restaurantId,
+                role = "KITCHEN_CHEF",
+                active = true
+            ))
+
+            // Bartenders
+            employees.add(EmployeeEntity(
+                firstName = "Sophie",
+                lastName = "Bakker",
+                personnelNumber = 3001,
+                restaurantId = restaurantId,
+                role = "BARTENDER",
+                active = true
+            ))
+            employees.add(EmployeeEntity(
+                firstName = "Luca",
+                lastName = "Meijer",
+                personnelNumber = 3002,
+                restaurantId = restaurantId,
+                role = "BARTENDER",
+                active = true
+            ))
+            employees.add(EmployeeEntity(
+                firstName = "Emma",
+                lastName = "Visser",
+                personnelNumber = 3003,
+                restaurantId = restaurantId,
+                role = "BARTENDER",
+                active = true
+            ))
+
+            // Waiters
+            employees.add(EmployeeEntity(
+                firstName = "Tom",
+                lastName = "Mulder",
+                personnelNumber = 4001,
+                restaurantId = restaurantId,
+                role = "WAITER",
+                active = true
+            ))
+            employees.add(EmployeeEntity(
+                firstName = "Lisa",
+                lastName = "Smit",
+                personnelNumber = 4002,
+                restaurantId = restaurantId,
+                role = "WAITER",
+                active = true
+            ))
+            employees.add(EmployeeEntity(
+                firstName = "Noah",
+                lastName = "de Boer",
+                personnelNumber = 4003,
+                restaurantId = restaurantId,
+                role = "WAITER",
+                active = true
+            ))
+            employees.add(EmployeeEntity(
+                firstName = "Eva",
+                lastName = "de Wit",
+                personnelNumber = 4004,
+                restaurantId = restaurantId,
+                role = "WAITER",
+                active = true
+            ))
+
+            // Cashiers
+            employees.add(EmployeeEntity(
+                firstName = "Lars",
+                lastName = "de Jong",
+                personnelNumber = 5001,
+                restaurantId = restaurantId,
+                role = "CASHIER",
+                active = true
+            ))
+            employees.add(EmployeeEntity(
+                firstName = "Anna",
+                lastName = "Koning",
+                personnelNumber = 5002,
+                restaurantId = restaurantId,
+                role = "CASHIER",
+                active = true
+            ))
+
+            // Save all employees
+            val savedEmployees = employeeR2dbcRepository.saveAll(employees).collectList().block() ?: emptyList()
+            logger.info("Successfully seeded ${savedEmployees.size} employees:")
+            
+            savedEmployees.forEach { employee ->
+                logger.info("  - ${employee.firstName} ${employee.lastName} (${employee.personnelNumber}) - ${employee.role}")
+            }
+            
+        } catch (e: Exception) {
+            logger.error("Error seeding employees: ${e.message}", e)
+            // Don't throw - continue even if employee seeding fails
+        }
     }
 
     private fun resetSequence(sequenceName: String, startValue: Long): reactor.core.publisher.Mono<Long> {
