@@ -102,5 +102,18 @@ class RestaurantProductService(
             .then()
     }
 
+    fun linkNewProductToAllRestaurants(productId: Int): Mono<Void> {
+        return restaurantRepository.findAll()
+            .flatMap { restaurant ->
+                val entity = RestaurantProductEntity(
+                    restaurantId = restaurant.id!!,
+                    productId = productId,
+                    customPrice = null,
+                    isAvailable = false // Default to unavailable, restaurant can enable it
+                )
+                restaurantProductRepository.save(entity)
+            }
+            .then()
+    }
 
 }

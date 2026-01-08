@@ -21,6 +21,17 @@ class ProductService(
 
 	fun save(product: Product): Mono<Product> =
 		db.save(product)
+			.flatMap { savedProduct ->
+				// Automatically link new product to all existing restaurants
+				// Products are added with isAvailable=false by default
+				// Restaurants can enable them individually
+				if (savedProduct.id != null) {
+					restaurantProductService.linkNewProductToAllRestaurants(savedProduct.id)
+						.then(Mono.just(savedProduct))
+				} else {
+					Mono.just(savedProduct)
+				}
+			}
 
     fun deleteById(id: Int): Mono<Void> =
         db.deleteById(id)

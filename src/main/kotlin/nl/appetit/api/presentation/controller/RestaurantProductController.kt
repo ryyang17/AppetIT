@@ -12,6 +12,7 @@ import nl.appetit.api.presentation.dto.restaurant.RestaurantProductResponse
 import nl.appetit.api.presentation.dto.restaurant.UpdateRestaurantProductAvailabilityRequest
 import nl.appetit.api.presentation.dto.restaurant.UpdateRestaurantProductPriceRequest
 import nl.appetit.api.presentation.mapper.RestaurantProductMapper
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
@@ -26,6 +27,7 @@ class RestaurantProductController(
     private val productRepository: ProductRepository,
     private val restaurantRepository: RestaurantRepository
 ) {
+    private val logger = LoggerFactory.getLogger(RestaurantProductController::class.java)
 
     @GetMapping
     @Operation(
@@ -158,7 +160,8 @@ class RestaurantProductController(
             restaurantId = restaurantId,
             productId = productId,
             isAvailable = request.isAvailable
-        ).onErrorMap { e ->
+        )
+        .onErrorMap { e ->
             if (e.message?.contains("not found") == true) {
                 ResponseStatusException(HttpStatus.NOT_FOUND, e.message)
             } else {
