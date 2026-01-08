@@ -13,13 +13,16 @@ import nl.appetit.api.presentation.mapper.TagMapper
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import org.springframework.http.codec.multipart.FilePart
+import nl.appetit.api.logic.service.FileStorageService
 
 @RestController
 @RequestMapping("/products")
 @Tag(name = "Products", description = "Endpoints for managing products and filtering by tags")
 class ProductController(
     private val productService: ProductService,
-    private val tagService: TagService
+    private val tagService: TagService,
+    private val fileStorageService: FileStorageService
 ) {
 
     @GetMapping
@@ -138,6 +141,40 @@ class ProductController(
     )
     fun deleteAll(): Mono<Void> =
         productService.deleteAll()
+
+    @PostMapping("/{id}/image", consumes = ["multipart/form-data"])
+    @Operation(
+        summary = "Upload product image",
+        description = "Upload an image file for a product. Replaces the existing image. Allowed formats: jpg, png, webp. Max size: 10MB"
+    )
+    fun uploadImage(
+        @Parameter(description = "The ID of the product", required = true)
+        @PathVariable id: Int,
+        @Parameter(description = "The image file to upload", required = true)
+        @RequestPart("file") filePart: Mono<FilePart>
+    ): Mono<ProductResponse> {
+        return filePart.flatMap { file ->
+            // 1. Oude afbeelding ophalen (optioneel: later verwijderen)
+            productService.findById(id)
+                .flatMap { product ->
+                    // 2. Nieuwe afbeelding opslaan
+                    fileStorageService.storeFile(id, file)
+                        .flatMap { newImageUrl ->
+                            // 3. Database updaten met nieuwe URL
+                            productService.updateImageUrl(id, newImageUrl)
+                        }
+                        .flatMap { updatedProduct ->
+                            // 4. Tags ophalen en response maken
+                            tagService.getTagsByProductId(id)
+                                .map(TagMapper::toResponse)
+                                .collectList()
+                                .map { tags ->
+                                    ProductMapper.toResponse(updatedProduct, tags)
+                                }
+                        }
+                }
+        }
+    }
 }
 
 

@@ -15,6 +15,9 @@ class ProductService(
 ) {
     fun findAll(): Flux<Product> =
         db.findAll()
+	
+	fun findById(id: Int): Mono<Product> =
+        db.findById(id)
 
 	fun save(product: Product): Mono<Product> =
 		db.save(product)
@@ -52,4 +55,11 @@ class ProductService(
 			productTagRepository.findProductsExcludingTagIds(tagIds)
 		}
 	}
+	fun updateImageUrl(id: Int, imageUrl: String): Mono<Product> =
+		db.findById(id)
+			.switchIfEmpty(Mono.error(RuntimeException("Product not found with id: $id")))
+			.flatMap { existing ->
+				val updated = existing.copy(imageUrl = imageUrl)
+				db.save(updated)
+			}
 }

@@ -7,6 +7,8 @@ import reactor.core.publisher.Mono
 interface OrderRepository {
     fun findAll(): Flux<Order>
     fun findByTableId(tableId: Int): Flux<Order>
+    fun findByStatus(status: String): Flux<Order>
+    fun findByTableIdAndStatus(tableId: Int, status: String): Flux<Order>
     fun save(order: Order): Mono<Order>
     fun deleteById(id: Int): Mono<Void>
     fun deleteAll(): Mono<Void>
