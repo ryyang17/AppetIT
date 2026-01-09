@@ -14,6 +14,9 @@ data class RestaurantProductResponse(
     @JsonProperty("isAvailable")
     val isAvailable: Boolean,
     val restaurantId: Int,
-    val restaurantName: String
+    val restaurantName: String,
+    val categoryId: Int? = null,
+    val description: String? = null,
+    val imageUrl: String? = null
 )
 

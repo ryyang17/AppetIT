@@ -36,9 +36,18 @@ class RestaurantProductController(
     )
     fun getProductsByRestaurant(
         @Parameter(description = "The ID of the restaurant", required = true)
-        @PathVariable restaurantId: Int
+        @PathVariable restaurantId: Int,
+        @Parameter(description = "Filter to only show available products", required = false)
+        @RequestParam(required = false, defaultValue = "false") availableOnly: Boolean
     ): Flux<RestaurantProductResponse> {
-        return restaurantProductService.getProductsByRestaurant(restaurantId)
+        val productsFlux = if (availableOnly) {
+            restaurantProductService.getProductsByRestaurant(restaurantId)
+                .filter { it.isAvailable }
+        } else {
+            restaurantProductService.getProductsByRestaurant(restaurantId)
+        }
+        
+        return productsFlux
             .flatMap { restaurantProduct ->
                 val productMono = productRepository.findById(restaurantProduct.productId)
                 val restaurantMono = restaurantRepository.findById(restaurantProduct.restaurantId)
