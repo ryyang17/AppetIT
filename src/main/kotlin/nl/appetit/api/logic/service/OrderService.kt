@@ -2,6 +2,7 @@ package nl.appetit.api.logic.service
 
 import nl.appetit.api.logic.exception.NotFoundException
 import nl.appetit.api.logic.model.Order
+import nl.appetit.api.logic.repository.OrderItemRepository
 import nl.appetit.api.presentation.dto.order.OrderPatch
 import nl.appetit.api.presentation.dto.order.OrderResponse
 import nl.appetit.api.presentation.mapper.OrderMapper
@@ -16,6 +17,7 @@ import reactor.core.publisher.Mono
 class OrderService(
     private val db: OrderRepository,
     private val tableRepository: TableRepository,
+    private val orderItemRepository: OrderItemRepository,
     private val barUpdateService: BarUpdateService
 ) {
     fun findAll(): Flux<Order> = db.findAll()
@@ -37,6 +39,9 @@ class OrderService(
         db.findByTableId(tableId).flatMap { order ->
             enrichOrderWithTableData(order)
         }
+
+    fun findByRestaurantIdAndCategoryName(restaurantId: Int, categoryName: String): Flux<Order> =
+        db.findByRestaurantIdAndCategoryName(restaurantId, categoryName)
 
     /**
      * Get orders by status with table data included

@@ -22,6 +22,9 @@ class OrderRepositoryImpl(
     override fun findByTableId(tableId: Int): Flux<Order> =
         db.findByTableId(tableId).map(OrderMapper::toModel)
 
+    override fun findByRestaurantIdAndCategoryName(restaurantId: Int, categoryName: String): Flux<Order> =
+        db.findByRestaurantIdAndCategoryName(restaurantId, categoryName).map(OrderMapper::toModel)
+
     override fun findByStatus(status: String): Flux<Order> {
         logger.info("OrderRepositoryImpl.findByStatus called with status: {}", status)
         return db.findByStatus(status)
