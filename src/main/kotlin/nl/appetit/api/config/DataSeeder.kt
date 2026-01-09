@@ -230,7 +230,7 @@ class DataSeeder(
             ProductData("Spaghetti Bolognese", "13.00", "Classic spaghetti with traditional meat sauce",
                 "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Pasta"),
             ProductData("Veggie Burger", "12.50", "House-made veggie patty with fresh toppings",
-                "https://images.unsplash.com/photo-1585238341710-4dd9e42e1e9a?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Vegetarian"),
+                "https://images.unsplash.com/photo-1520072959219-c595dc870360?q=80&w=1890&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Vegetarian"),
             ProductData("Caesar Salad", "9.50", "Fresh romaine lettuce with Caesar dressing and croutons",
                 "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Salads"),
             ProductData("Greek Salad", "10.50", "Mixed greens with feta cheese, olives, and Greek dressing",
@@ -246,7 +246,7 @@ class DataSeeder(
             ProductData("Coffee", "2.50", "Freshly brewed espresso-based coffee",
                 "https://images.unsplash.com/photo-1495774856032-8b90bbb32b32?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Hot Drinks"),
             ProductData("Cappuccino", "3.50", "Espresso with steamed milk and foam",
-                "https://images.unsplash.com/photo-1517668808822-9ebb02ae2a0e?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Hot Drinks"),
+                "https://plus.unsplash.com/premium_photo-1669374537636-518629de3b85?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Hot Drinks"),
             ProductData("Hot Chocolate", "3.00", "Creamy hot chocolate with whipped cream",
                 "https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Hot Drinks"),
             ProductData("Fresh Orange Juice", "3.50", "Freshly squeezed orange juice",
@@ -254,13 +254,13 @@ class DataSeeder(
             ProductData("Sparkling Water", "2.00", "Refreshing sparkling water",
                 "https://images.unsplash.com/photo-1619622683368-8a66b4b5c420?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Cold Drinks"),
             ProductData("Iced Tea", "2.75", "Chilled iced tea with fresh lemon",
-                "https://images.unsplash.com/photo-1570020176750-e0dd52f6a83d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Cold Drinks"),
+                "https://images.unsplash.com/photo-1658397029207-029feea1ef25?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8aWNldGVhfGVufDB8fDB8fHww", "Cold Drinks"),
             ProductData("House Red Wine", "5.50", "Selection of premium red wine by the glass",
-                "https://images.unsplash.com/photo-1510812431401-41d2cab2707d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Alcoholic"),
+                "https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Alcoholic"),
             ProductData("House White Wine", "5.50", "Selection of premium white wine by the glass",
-                "https://images.unsplash.com/photo-1510812431401-41d2cab2707d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Alcoholic"),
+                "https://images.unsplash.com/photo-1681312913296-b656fa5ca865?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fHdpdHRlJTIwd2lqbnxlbnwwfHwwfHx8MA%3D%3D", "Alcoholic"),
             ProductData("Craft Beer", "4.50", "Selection of local craft beers",
-                "https://images.unsplash.com/photo-1608270861620-7c40f36e1b5d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Alcoholic")
+                "https://images.unsplash.com/photo-1594487984147-3389bcee5078?q=80&w=1160&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Alcoholic")
         )
         
         val products = productsData.map { data ->
