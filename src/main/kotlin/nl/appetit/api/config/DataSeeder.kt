@@ -690,7 +690,7 @@ class DataSeeder(
     }
 
     private fun seedTables() {
-        logger.info("Seeding tables (1..10) for each restaurant...")
+        logger.info("Seeding tables for each restaurant with different configurations...")
 
         val restaurants = restaurantR2dbcRepository.findAll().collectList().block() ?: emptyList()
         var restaurantList = restaurants
@@ -718,14 +718,47 @@ class DataSeeder(
         }
 
         val tables = mutableListOf<TableEntity>()
-        restaurantList.forEach { rest ->
-            val rid = rest.id ?: return@forEach
-            for (i in 1..10) {
-                tables.add(TableEntity(restaurantId = rid, tableNumber = i, capacity = 4))
+        restaurantList.forEachIndexed { index, rest ->
+            val rid = rest.id ?: return@forEachIndexed
+            
+            // Different configurations per restaurant for demonstration
+            when (index) {
+                0 -> {
+                    // Restaurant 1 (Centrum): 10 tafels met capacities 2, 4, 6, 8
+                    val capacities = listOf(2, 4, 6, 8)
+                    for (i in 1..10) {
+                        val capacity = capacities[(i - 1) % capacities.size]
+                        tables.add(TableEntity(restaurantId = rid, tableNumber = i, capacity = capacity))
+                    }
+                }
+                1 -> {
+                    // Restaurant 2 (Zuid): 8 tafels met capacities 4, 6, 8 (geen 2-persoons tafels)
+                    val capacities = listOf(4, 6, 8)
+                    for (i in 1..8) {
+                        val capacity = capacities[(i - 1) % capacities.size]
+                        tables.add(TableEntity(restaurantId = rid, tableNumber = i, capacity = capacity))
+                    }
+                }
+                else -> {
+                    // Default: 10 tafels met capacity 4
+                    for (i in 1..10) {
+                        tables.add(TableEntity(restaurantId = rid, tableNumber = i, capacity = 4))
+                    }
+                }
             }
         }
 
         val savedTables = tableR2dbcRepository.saveAll(tables).collectList().block()!!
+        
+        // Log details per restaurant
+        restaurantList.forEachIndexed { index, rest ->
+            val rid = rest.id ?: return@forEachIndexed
+            val restaurantTables = savedTables.filter { it.restaurantId == rid }
+            val tableCount = restaurantTables.size
+            val capacities = restaurantTables.mapNotNull { it.capacity }.distinct().sorted()
+            logger.info("Restaurant '${rest.name}' (id=$rid): $tableCount tafels met capacities: ${capacities.joinToString(", ")}")
+        }
+        
         logger.info("${savedTables.size} tables seeded successfully for ${restaurantList.size} restaurant(s)")
     }
 
