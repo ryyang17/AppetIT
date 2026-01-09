@@ -1,6 +1,5 @@
 package nl.appetit.api.logic.service
 
-import nl.appetit.api.data.entity.ProductEntity
 import nl.appetit.api.logic.model.Product
 import nl.appetit.api.logic.repository.ProductRepository
 import nl.appetit.api.logic.repository.ProductTagRepository
@@ -11,7 +10,8 @@ import reactor.core.publisher.Mono
 @Service
 class ProductService(
     private val db: ProductRepository,
-    private val productTagRepository: ProductTagRepository
+    private val productTagRepository: ProductTagRepository,
+    private val restaurantProductService: RestaurantProductService
 ) {
     fun findAll(): Flux<Product> =
         db.findAll()
@@ -21,6 +21,17 @@ class ProductService(
 
 	fun save(product: Product): Mono<Product> =
 		db.save(product)
+			.flatMap { savedProduct ->
+				// Automatically link new product to all existing restaurants
+				// Products are added with isAvailable=false by default
+				// Restaurants can enable them individually
+				if (savedProduct.id != null) {
+					restaurantProductService.linkNewProductToAllRestaurants(savedProduct.id)
+						.then(Mono.just(savedProduct))
+				} else {
+					Mono.just(savedProduct)
+				}
+			}
 
     fun deleteById(id: Int): Mono<Void> =
         db.deleteById(id)
@@ -63,5 +74,3 @@ class ProductService(
 				db.save(updated)
 			}
 }
-
-

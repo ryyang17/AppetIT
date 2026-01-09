@@ -11,11 +11,17 @@ import reactor.core.publisher.Mono
 @Service
 class RestaurantService(
     private val restaurantRepository: RestaurantRepository,
+    private val restaurantProductService: RestaurantProductService
 ) {
 
     fun findAll(): Flux<Restaurant> = restaurantRepository.findAll()
 
-    fun save(restaurant: Restaurant): Mono<Restaurant> = restaurantRepository.save(restaurant)
+    fun save(restaurant: Restaurant): Mono<Restaurant> =
+        restaurantRepository.save(restaurant)
+            .flatMap { savedRestaurant ->
+                restaurantProductService.linkAllProductsToNewRestaurant(savedRestaurant.id!!)
+                    .then(Mono.just(savedRestaurant))
+            }
 
     fun deleteById(restaurantId: Int): Mono<Void> = restaurantRepository.deleteById(restaurantId)
 

@@ -6,6 +6,8 @@ import nl.appetit.api.data.entity.TagEntity
 import nl.appetit.api.data.entity.TranslationEntity
 import nl.appetit.api.data.entity.TableEntity
 import nl.appetit.api.data.entity.RestaurantEntity
+import nl.appetit.api.data.entity.EmployeeEntity
+import nl.appetit.api.data.entity.RestaurantProductEntity
 import nl.appetit.api.data.repository.CategoryR2dbcRepository
 import nl.appetit.api.data.repository.ProductR2dbcRepository
 import nl.appetit.api.data.repository.TagR2dbcRepository
@@ -18,6 +20,7 @@ import nl.appetit.api.data.repository.OrderItemR2dbcRepository
 import nl.appetit.api.data.repository.EmployeeR2dbcRepository
 import nl.appetit.api.data.repository.TablePaymentOrderR2dbcRepository
 import nl.appetit.api.data.repository.TablePaymentR2dbcRepository
+import nl.appetit.api.data.repository.RestaurantProductR2dbcRepository
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
@@ -42,6 +45,7 @@ class DataSeeder(
     private val employeeR2dbcRepository: EmployeeR2dbcRepository,
     private val tablePaymentOrderR2dbcRepository: TablePaymentOrderR2dbcRepository,
     private val tablePaymentR2dbcRepository: TablePaymentR2dbcRepository,
+    private val restaurantProductR2dbcRepository: RestaurantProductR2dbcRepository,
     private val databaseClient: DatabaseClient
 ) : CommandLineRunner {
 
@@ -73,8 +77,20 @@ class DataSeeder(
         categoryR2dbcRepository.deleteAll().block()
         tagR2dbcRepository.deleteAll().block()
         translationR2dbcRepository.deleteAll().block()
-        // Delete tables (but keep restaurants and employees for demo purposes)
+        // Delete tables
         tableR2dbcRepository.deleteAll().block()
+        // Delete restaurant-product relationships
+        try {
+            restaurantProductR2dbcRepository.deleteAll().block()
+        } catch (e: Exception) {
+            logger.warn("Failed to delete restaurant-product relationships (this is OK on first run before migration): {}", e.message)
+        }
+        // Delete employees (will be recreated by seedEmployees)
+        try {
+            employeeR2dbcRepository.deleteAll().block()
+        } catch (e: Exception) {
+            logger.warn("Failed to delete employees (this is OK on first run before migration): {}", e.message)
+        }
         // Also delete restaurants to ensure clean state (will be recreated if needed)
         restaurantR2dbcRepository.deleteAll().block()
         
@@ -93,6 +109,12 @@ class DataSeeder(
             // New payment-related tables
             resetSequence("table_payment_table_payment_id_seq", 1).block()
             resetSequence("table_payment_order_id_seq", 1).block()
+            // Reset employee sequence
+            try {
+                resetSequence("staff_staff_id_seq", 1).block()
+            } catch (e: Exception) {
+                logger.warn("Failed to reset staff_staff_id_seq (this is OK if table doesn't exist yet): {}", e.message)
+            }
             logger.info("Sequences reset successfully - all IDs will start from 1")
         } catch (e: Exception) {
             logger.warn("Failed to reset some sequences (this is OK if tables don't exist yet): {}", e.message)
@@ -115,8 +137,14 @@ class DataSeeder(
         // Seed translations
         seedTranslations(categoryMap, productMap)
 
-        // Seed tables (1..10) for each restaurant (create a demo restaurant if none exist)
+        // Seed tables (1..10) for each restaurant (create demo restaurants if none exist)
         seedTables()
+
+        // Seed employees for restaurants
+        seedEmployees()
+
+        // Seed restaurant-product relationships with random availability
+        seedRestaurantProducts(productMap)
 
         logger.info("Data seeding completed!")
     }
@@ -202,7 +230,7 @@ class DataSeeder(
             ProductData("Spaghetti Bolognese", "13.00", "Classic spaghetti with traditional meat sauce",
                 "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Pasta"),
             ProductData("Veggie Burger", "12.50", "House-made veggie patty with fresh toppings",
-                "https://images.unsplash.com/photo-1585238341710-4dd9e42e1e9a?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Vegetarian"),
+                "https://images.unsplash.com/photo-1520072959219-c595dc870360?q=80&w=1890&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Vegetarian"),
             ProductData("Caesar Salad", "9.50", "Fresh romaine lettuce with Caesar dressing and croutons",
                 "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Salads"),
             ProductData("Greek Salad", "10.50", "Mixed greens with feta cheese, olives, and Greek dressing",
@@ -218,7 +246,7 @@ class DataSeeder(
             ProductData("Coffee", "2.50", "Freshly brewed espresso-based coffee",
                 "https://images.unsplash.com/photo-1495774856032-8b90bbb32b32?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Hot Drinks"),
             ProductData("Cappuccino", "3.50", "Espresso with steamed milk and foam",
-                "https://images.unsplash.com/photo-1517668808822-9ebb02ae2a0e?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Hot Drinks"),
+                "https://plus.unsplash.com/premium_photo-1669374537636-518629de3b85?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Hot Drinks"),
             ProductData("Hot Chocolate", "3.00", "Creamy hot chocolate with whipped cream",
                 "https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Hot Drinks"),
             ProductData("Fresh Orange Juice", "3.50", "Freshly squeezed orange juice",
@@ -226,13 +254,13 @@ class DataSeeder(
             ProductData("Sparkling Water", "2.00", "Refreshing sparkling water",
                 "https://images.unsplash.com/photo-1619622683368-8a66b4b5c420?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Cold Drinks"),
             ProductData("Iced Tea", "2.75", "Chilled iced tea with fresh lemon",
-                "https://images.unsplash.com/photo-1570020176750-e0dd52f6a83d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Cold Drinks"),
+                "https://images.unsplash.com/photo-1658397029207-029feea1ef25?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8aWNldGVhfGVufDB8fDB8fHww", "Cold Drinks"),
             ProductData("House Red Wine", "5.50", "Selection of premium red wine by the glass",
-                "https://images.unsplash.com/photo-1510812431401-41d2cab2707d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Alcoholic"),
+                "https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Alcoholic"),
             ProductData("House White Wine", "5.50", "Selection of premium white wine by the glass",
-                "https://images.unsplash.com/photo-1510812431401-41d2cab2707d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Alcoholic"),
+                "https://images.unsplash.com/photo-1681312913296-b656fa5ca865?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fHdpdHRlJTIwd2lqbnxlbnwwfHwwfHx8MA%3D%3D", "Alcoholic"),
             ProductData("Craft Beer", "4.50", "Selection of local craft beers",
-                "https://images.unsplash.com/photo-1608270861620-7c40f36e1b5d?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Alcoholic")
+                "https://images.unsplash.com/photo-1594487984147-3389bcee5078?q=80&w=1160&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "Alcoholic")
         )
         
         val products = productsData.map { data ->
@@ -662,29 +690,283 @@ class DataSeeder(
     }
 
     private fun seedTables() {
-        logger.info("Seeding tables (1..10) for each restaurant...")
+        logger.info("Seeding tables for each restaurant with different configurations...")
 
         val restaurants = restaurantR2dbcRepository.findAll().collectList().block() ?: emptyList()
         var restaurantList = restaurants
 
         if (restaurantList.isEmpty()) {
-            // create a default demo restaurant to attach tables to
-            val demo = RestaurantEntity(name = "Demo Restaurant", address = "Demo Address", phone = "", email = "", isActive = true)
-            val savedDemo = restaurantR2dbcRepository.save(demo).block()!!
-            restaurantList = listOf(savedDemo)
-            logger.info("No restaurants found. Created demo restaurant with id=${savedDemo.id}")
+            // Create 2 demo restaurants for demonstration
+            val demo1 = RestaurantEntity(
+                name = "Demo Restaurant Centrum", 
+                address = "Hoofdstraat 123, Amsterdam", 
+                phone = "020-1234567", 
+                email = "centrum@appetit.nl", 
+                isActive = true
+            )
+            val demo2 = RestaurantEntity(
+                name = "Demo Restaurant Zuid", 
+                address = "Zuidplein 456, Amsterdam", 
+                phone = "020-7654321", 
+                email = "zuid@appetit.nl", 
+                isActive = true
+            )
+            val savedDemo1 = restaurantR2dbcRepository.save(demo1).block()!!
+            val savedDemo2 = restaurantR2dbcRepository.save(demo2).block()!!
+            restaurantList = listOf(savedDemo1, savedDemo2)
+            logger.info("No restaurants found. Created 2 demo restaurants: '${savedDemo1.name}' (id=${savedDemo1.id}) and '${savedDemo2.name}' (id=${savedDemo2.id})")
         }
 
         val tables = mutableListOf<TableEntity>()
-        restaurantList.forEach { rest ->
-            val rid = rest.id ?: return@forEach
-            for (i in 1..10) {
-                tables.add(TableEntity(restaurantId = rid, tableNumber = i, capacity = 4))
+        restaurantList.forEachIndexed { index, rest ->
+            val rid = rest.id ?: return@forEachIndexed
+            
+            // Different configurations per restaurant for demonstration
+            when (index) {
+                0 -> {
+                    // Restaurant 1 (Centrum): 10 tafels met capacities 2, 4, 6, 8
+                    val capacities = listOf(2, 4, 6, 8)
+                    for (i in 1..10) {
+                        val capacity = capacities[(i - 1) % capacities.size]
+                        tables.add(TableEntity(restaurantId = rid, tableNumber = i, capacity = capacity))
+                    }
+                }
+                1 -> {
+                    // Restaurant 2 (Zuid): 8 tafels met capacities 4, 6, 8 (geen 2-persoons tafels)
+                    val capacities = listOf(4, 6, 8)
+                    for (i in 1..8) {
+                        val capacity = capacities[(i - 1) % capacities.size]
+                        tables.add(TableEntity(restaurantId = rid, tableNumber = i, capacity = capacity))
+                    }
+                }
+                else -> {
+                    // Default: 10 tafels met capacity 4
+                    for (i in 1..10) {
+                        tables.add(TableEntity(restaurantId = rid, tableNumber = i, capacity = 4))
+                    }
+                }
             }
         }
 
         val savedTables = tableR2dbcRepository.saveAll(tables).collectList().block()!!
+        
+        // Log details per restaurant
+        restaurantList.forEachIndexed { index, rest ->
+            val rid = rest.id ?: return@forEachIndexed
+            val restaurantTables = savedTables.filter { it.restaurantId == rid }
+            val tableCount = restaurantTables.size
+            val capacities = restaurantTables.mapNotNull { it.capacity }.distinct().sorted()
+            logger.info("Restaurant '${rest.name}' (id=$rid): $tableCount tafels met capacities: ${capacities.joinToString(", ")}")
+        }
+        
         logger.info("${savedTables.size} tables seeded successfully for ${restaurantList.size} restaurant(s)")
+    }
+
+    private fun seedEmployees() {
+        try {
+            logger.info("Seeding employees for restaurants...")
+
+            val restaurants = restaurantR2dbcRepository.findAll().collectList().block() ?: emptyList()
+            val restaurantId = restaurants.firstOrNull()?.id
+
+            if (restaurantId == null) {
+                logger.warn("No restaurants found. Cannot seed employees without a restaurant.")
+                return
+            }
+
+            // Check if employees already exist (for idempotency, but normally they should be deleted by cleanup)
+            val existingEmployees = employeeR2dbcRepository.findAll().collectList().block() ?: emptyList()
+            if (existingEmployees.isNotEmpty()) {
+                logger.info("Employees already exist (${existingEmployees.size}). Skipping employee seeding.")
+                logger.info("Note: If you want to reseed employees, delete them first or truncate the staff table.")
+                return
+            }
+
+            val employees = mutableListOf<EmployeeEntity>()
+
+            // Nederlandse namen met verschillende rollen voor AppetIT
+            // Manager (alleen 1)
+            employees.add(EmployeeEntity(
+                firstName = "Jan",
+                lastName = "van der Berg",
+                personnelNumber = 1001,
+                restaurantId = restaurantId,
+                role = "MANAGER",
+                active = true
+            ))
+
+            // Kitchen Chefs
+            employees.add(EmployeeEntity(
+                firstName = "Marieke",
+                lastName = "de Vries",
+                personnelNumber = 2001,
+                restaurantId = restaurantId,
+                role = "KITCHEN_CHEF",
+                active = true
+            ))
+            employees.add(EmployeeEntity(
+                firstName = "Daan",
+                lastName = "Jansen",
+                personnelNumber = 2002,
+                restaurantId = restaurantId,
+                role = "KITCHEN_CHEF",
+                active = true
+            ))
+
+            // Bartenders
+            employees.add(EmployeeEntity(
+                firstName = "Sophie",
+                lastName = "Bakker",
+                personnelNumber = 3001,
+                restaurantId = restaurantId,
+                role = "BARTENDER",
+                active = true
+            ))
+            employees.add(EmployeeEntity(
+                firstName = "Luca",
+                lastName = "Meijer",
+                personnelNumber = 3002,
+                restaurantId = restaurantId,
+                role = "BARTENDER",
+                active = true
+            ))
+            employees.add(EmployeeEntity(
+                firstName = "Emma",
+                lastName = "Visser",
+                personnelNumber = 3003,
+                restaurantId = restaurantId,
+                role = "BARTENDER",
+                active = true
+            ))
+
+            // Waiters
+            employees.add(EmployeeEntity(
+                firstName = "Tom",
+                lastName = "Mulder",
+                personnelNumber = 4001,
+                restaurantId = restaurantId,
+                role = "WAITER",
+                active = true
+            ))
+            employees.add(EmployeeEntity(
+                firstName = "Lisa",
+                lastName = "Smit",
+                personnelNumber = 4002,
+                restaurantId = restaurantId,
+                role = "WAITER",
+                active = true
+            ))
+            employees.add(EmployeeEntity(
+                firstName = "Noah",
+                lastName = "de Boer",
+                personnelNumber = 4003,
+                restaurantId = restaurantId,
+                role = "WAITER",
+                active = true
+            ))
+            employees.add(EmployeeEntity(
+                firstName = "Eva",
+                lastName = "de Wit",
+                personnelNumber = 4004,
+                restaurantId = restaurantId,
+                role = "WAITER",
+                active = true
+            ))
+
+            // Cashiers
+            employees.add(EmployeeEntity(
+                firstName = "Lars",
+                lastName = "de Jong",
+                personnelNumber = 5001,
+                restaurantId = restaurantId,
+                role = "CASHIER",
+                active = true
+            ))
+            employees.add(EmployeeEntity(
+                firstName = "Anna",
+                lastName = "Koning",
+                personnelNumber = 5002,
+                restaurantId = restaurantId,
+                role = "CASHIER",
+                active = true
+            ))
+
+            // Save all employees
+            val savedEmployees = employeeR2dbcRepository.saveAll(employees).collectList().block() ?: emptyList()
+            logger.info("Successfully seeded ${savedEmployees.size} employees:")
+            
+            savedEmployees.forEach { employee ->
+                logger.info("  - ${employee.firstName} ${employee.lastName} (${employee.personnelNumber}) - ${employee.role}")
+            }
+            
+        } catch (e: Exception) {
+            logger.error("Error seeding employees: ${e.message}", e)
+            // Don't throw - continue even if employee seeding fails
+        }
+    }
+
+    private fun seedRestaurantProducts(productMap: Map<String, Int>) {
+        logger.info("Seeding restaurant-product relationships with random availability...")
+
+        val restaurants = restaurantR2dbcRepository.findAll().collectList().block() ?: emptyList()
+        val products = productR2dbcRepository.findAll().collectList().block() ?: emptyList()
+
+        if (restaurants.isEmpty()) {
+            logger.warn("No restaurants found. Cannot seed restaurant-product relationships.")
+            return
+        }
+
+        if (products.isEmpty()) {
+            logger.warn("No products found. Cannot seed restaurant-product relationships.")
+            return
+        }
+
+        val restaurantProducts = mutableListOf<RestaurantProductEntity>()
+        
+        // Use a seed for reproducibility (but still random per restaurant)
+        val random = kotlin.random.Random(System.currentTimeMillis())
+
+        restaurants.forEach { restaurant ->
+            val restaurantId = restaurant.id ?: return@forEach
+            
+            products.forEach { product ->
+                val productId = product.id ?: return@forEach
+                
+                // Generate random availability (70% chance of being available for demo purposes)
+                // This creates variation between restaurants
+                val isAvailable = random.nextDouble() < 0.7
+                
+                restaurantProducts.add(
+                    RestaurantProductEntity(
+                        restaurantId = restaurantId,
+                        productId = productId,
+                        customPrice = null, // No custom prices by default
+                        isAvailable = isAvailable
+                    )
+                )
+            }
+        }
+
+        // Delete existing restaurant-product relationships first
+        try {
+            restaurantProductR2dbcRepository.deleteAll().block()
+        } catch (e: Exception) {
+            logger.warn("Failed to delete existing restaurant-product relationships (this is OK on first run): {}", e.message)
+        }
+
+        val savedRestaurantProducts = restaurantProductR2dbcRepository.saveAll(restaurantProducts).collectList().block()!!
+        
+        // Count available vs unavailable per restaurant for logging
+        restaurants.forEach { restaurant ->
+            val restaurantId = restaurant.id ?: return@forEach
+            val restaurantProductsForRestaurant = savedRestaurantProducts.filter { it.restaurantId == restaurantId }
+            val availableCount = restaurantProductsForRestaurant.count { it.isAvailable }
+            val unavailableCount = restaurantProductsForRestaurant.size - availableCount
+            
+            logger.info("Restaurant '${restaurant.name}' (id=$restaurantId): ${restaurantProductsForRestaurant.size} products linked (${availableCount} available, ${unavailableCount} unavailable)")
+        }
+        
+        logger.info("${savedRestaurantProducts.size} restaurant-product relationships seeded successfully")
     }
 
     private fun resetSequence(sequenceName: String, startValue: Long): reactor.core.publisher.Mono<Long> {

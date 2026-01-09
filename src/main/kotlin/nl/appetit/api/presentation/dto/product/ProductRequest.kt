@@ -1,5 +1,6 @@
 package nl.appetit.api.presentation.dto.product
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import java.math.BigDecimal
 
 data class ProductRequest(
@@ -7,6 +8,7 @@ data class ProductRequest(
     val price: BigDecimal,
     val description: String? = null,
     val imageUrl: String? = null,
-    val available: Boolean,
+    @JsonAlias("available")
+    val isAvailable: Boolean = true,
     val categoryId: Int? = null
 )
