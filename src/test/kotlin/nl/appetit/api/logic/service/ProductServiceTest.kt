@@ -17,13 +17,15 @@ class ProductServiceTest {
 
     private lateinit var productRepository: ProductRepository
     private lateinit var productTagRepository: ProductTagRepository
+    private lateinit var restaurantProductService: RestaurantProductService
     private lateinit var productService: ProductService
 
     @BeforeEach
     fun setUp() {
         productRepository = mock()
         productTagRepository = mock()
-        productService = ProductService(productRepository, productTagRepository)
+        restaurantProductService = mock()
+        productService = ProductService(productRepository, productTagRepository, restaurantProductService)
     }
 
     @Test
@@ -53,6 +55,7 @@ class ProductServiceTest {
         val product = createProduct(null, "New Product")
         val savedProduct = createProduct(1, "New Product")
         whenever(productRepository.save(any())).thenReturn(Mono.just(savedProduct))
+        whenever(restaurantProductService.linkNewProductToAllRestaurants(any())).thenReturn(Mono.empty())
 
         // Act
         val result = productService.save(product)
@@ -63,6 +66,7 @@ class ProductServiceTest {
             .verifyComplete()
 
         verify(productRepository, times(1)).save(product)
+        verify(restaurantProductService, times(1)).linkNewProductToAllRestaurants(1)
     }
 
     @Test

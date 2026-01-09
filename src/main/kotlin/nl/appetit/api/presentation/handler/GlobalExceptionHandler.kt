@@ -46,9 +46,19 @@ class GlobalExceptionHandler {
     )
     fun handleDecodingErrors(e: Exception): ResponseEntity<Map<String, String>> {
         val message = when (e) {
-            is InvalidFormatException -> "Invalid value for field: ${e.path.joinToString(".") { it.fieldName ?: "?" }}"
-            is ServerWebInputException -> e.reason ?: "Invalid request input"
-            else -> "Invalid request body"
+            is InvalidFormatException -> {
+                val fieldPath = e.path.joinToString(".") { it.fieldName ?: "?" }
+                "Invalid value for field: $fieldPath"
+            }
+            is ServerWebInputException -> {
+                e.reason ?: "Invalid request input"
+            }
+            is DecodingException -> {
+                "Failed to decode request body"
+            }
+            else -> {
+                "Invalid request body"
+            }
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf("errors" to message))
     }

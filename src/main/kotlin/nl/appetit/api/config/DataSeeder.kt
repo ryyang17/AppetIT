@@ -7,6 +7,7 @@ import nl.appetit.api.data.entity.TranslationEntity
 import nl.appetit.api.data.entity.TableEntity
 import nl.appetit.api.data.entity.RestaurantEntity
 import nl.appetit.api.data.entity.EmployeeEntity
+import nl.appetit.api.data.entity.RestaurantProductEntity
 import nl.appetit.api.data.repository.CategoryR2dbcRepository
 import nl.appetit.api.data.repository.ProductR2dbcRepository
 import nl.appetit.api.data.repository.TagR2dbcRepository
@@ -19,6 +20,7 @@ import nl.appetit.api.data.repository.OrderItemR2dbcRepository
 import nl.appetit.api.data.repository.EmployeeR2dbcRepository
 import nl.appetit.api.data.repository.TablePaymentOrderR2dbcRepository
 import nl.appetit.api.data.repository.TablePaymentR2dbcRepository
+import nl.appetit.api.data.repository.RestaurantProductR2dbcRepository
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
@@ -43,6 +45,7 @@ class DataSeeder(
     private val employeeR2dbcRepository: EmployeeR2dbcRepository,
     private val tablePaymentOrderR2dbcRepository: TablePaymentOrderR2dbcRepository,
     private val tablePaymentR2dbcRepository: TablePaymentR2dbcRepository,
+    private val restaurantProductR2dbcRepository: RestaurantProductR2dbcRepository,
     private val databaseClient: DatabaseClient
 ) : CommandLineRunner {
 
@@ -76,6 +79,12 @@ class DataSeeder(
         translationR2dbcRepository.deleteAll().block()
         // Delete tables
         tableR2dbcRepository.deleteAll().block()
+        // Delete restaurant-product relationships
+        try {
+            restaurantProductR2dbcRepository.deleteAll().block()
+        } catch (e: Exception) {
+            logger.warn("Failed to delete restaurant-product relationships (this is OK on first run before migration): {}", e.message)
+        }
         // Delete employees (will be recreated by seedEmployees)
         try {
             employeeR2dbcRepository.deleteAll().block()
@@ -128,11 +137,14 @@ class DataSeeder(
         // Seed translations
         seedTranslations(categoryMap, productMap)
 
-        // Seed tables (1..10) for each restaurant (create a demo restaurant if none exist)
+        // Seed tables (1..10) for each restaurant (create demo restaurants if none exist)
         seedTables()
 
         // Seed employees for restaurants
         seedEmployees()
+
+        // Seed restaurant-product relationships with random availability
+        seedRestaurantProducts(productMap)
 
         logger.info("Data seeding completed!")
     }
@@ -684,11 +696,25 @@ class DataSeeder(
         var restaurantList = restaurants
 
         if (restaurantList.isEmpty()) {
-            // create a default demo restaurant to attach tables to
-            val demo = RestaurantEntity(name = "Demo Restaurant", address = "Demo Address", phone = "", email = "", isActive = true)
-            val savedDemo = restaurantR2dbcRepository.save(demo).block()!!
-            restaurantList = listOf(savedDemo)
-            logger.info("No restaurants found. Created demo restaurant with id=${savedDemo.id}")
+            // Create 2 demo restaurants for demonstration
+            val demo1 = RestaurantEntity(
+                name = "Demo Restaurant Centrum", 
+                address = "Hoofdstraat 123, Amsterdam", 
+                phone = "020-1234567", 
+                email = "centrum@appetit.nl", 
+                isActive = true
+            )
+            val demo2 = RestaurantEntity(
+                name = "Demo Restaurant Zuid", 
+                address = "Zuidplein 456, Amsterdam", 
+                phone = "020-7654321", 
+                email = "zuid@appetit.nl", 
+                isActive = true
+            )
+            val savedDemo1 = restaurantR2dbcRepository.save(demo1).block()!!
+            val savedDemo2 = restaurantR2dbcRepository.save(demo2).block()!!
+            restaurantList = listOf(savedDemo1, savedDemo2)
+            logger.info("No restaurants found. Created 2 demo restaurants: '${savedDemo1.name}' (id=${savedDemo1.id}) and '${savedDemo2.name}' (id=${savedDemo2.id})")
         }
 
         val tables = mutableListOf<TableEntity>()
@@ -844,6 +870,70 @@ class DataSeeder(
             logger.error("Error seeding employees: ${e.message}", e)
             // Don't throw - continue even if employee seeding fails
         }
+    }
+
+    private fun seedRestaurantProducts(productMap: Map<String, Int>) {
+        logger.info("Seeding restaurant-product relationships with random availability...")
+
+        val restaurants = restaurantR2dbcRepository.findAll().collectList().block() ?: emptyList()
+        val products = productR2dbcRepository.findAll().collectList().block() ?: emptyList()
+
+        if (restaurants.isEmpty()) {
+            logger.warn("No restaurants found. Cannot seed restaurant-product relationships.")
+            return
+        }
+
+        if (products.isEmpty()) {
+            logger.warn("No products found. Cannot seed restaurant-product relationships.")
+            return
+        }
+
+        val restaurantProducts = mutableListOf<RestaurantProductEntity>()
+        
+        // Use a seed for reproducibility (but still random per restaurant)
+        val random = kotlin.random.Random(System.currentTimeMillis())
+
+        restaurants.forEach { restaurant ->
+            val restaurantId = restaurant.id ?: return@forEach
+            
+            products.forEach { product ->
+                val productId = product.id ?: return@forEach
+                
+                // Generate random availability (70% chance of being available for demo purposes)
+                // This creates variation between restaurants
+                val isAvailable = random.nextDouble() < 0.7
+                
+                restaurantProducts.add(
+                    RestaurantProductEntity(
+                        restaurantId = restaurantId,
+                        productId = productId,
+                        customPrice = null, // No custom prices by default
+                        isAvailable = isAvailable
+                    )
+                )
+            }
+        }
+
+        // Delete existing restaurant-product relationships first
+        try {
+            restaurantProductR2dbcRepository.deleteAll().block()
+        } catch (e: Exception) {
+            logger.warn("Failed to delete existing restaurant-product relationships (this is OK on first run): {}", e.message)
+        }
+
+        val savedRestaurantProducts = restaurantProductR2dbcRepository.saveAll(restaurantProducts).collectList().block()!!
+        
+        // Count available vs unavailable per restaurant for logging
+        restaurants.forEach { restaurant ->
+            val restaurantId = restaurant.id ?: return@forEach
+            val restaurantProductsForRestaurant = savedRestaurantProducts.filter { it.restaurantId == restaurantId }
+            val availableCount = restaurantProductsForRestaurant.count { it.isAvailable }
+            val unavailableCount = restaurantProductsForRestaurant.size - availableCount
+            
+            logger.info("Restaurant '${restaurant.name}' (id=$restaurantId): ${restaurantProductsForRestaurant.size} products linked (${availableCount} available, ${unavailableCount} unavailable)")
+        }
+        
+        logger.info("${savedRestaurantProducts.size} restaurant-product relationships seeded successfully")
     }
 
     private fun resetSequence(sequenceName: String, startValue: Long): reactor.core.publisher.Mono<Long> {

@@ -11,7 +11,7 @@ object ProductMapper {
         price = source.price,
         description = source.description,
         imageUrl = source.imageUrl ?: "",
-        isAvailable = source.available,
+        isAvailable = source.isAvailable,
         categoryId = source.categoryId?.takeIf { it > 0 }
     )
 

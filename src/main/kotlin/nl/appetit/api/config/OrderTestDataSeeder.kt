@@ -72,8 +72,10 @@ class OrderTestDataSeeder(
                 return
             }
 
-            // Get first restaurant ID from tables
-            val restaurantId = tables.firstOrNull()?.restaurantId
+            // Group tables by restaurant to distribute orders across both restaurants
+            val tablesByRestaurant = tables.groupBy { it.restaurantId }
+            val restaurantIds = tablesByRestaurant.keys.toList()
+            logger.info("Found ${restaurantIds.size} restaurants with tables: ${restaurantIds.joinToString()}")
 
         val orders = mutableListOf<OrderEntity>()
         val orderItems = mutableListOf<OrderItemEntity>()
@@ -105,8 +107,13 @@ class OrderTestDataSeeder(
         // - 2 PENDING orders
 
         // 2 READY orders (today/recent) - prepared by kitchen chefs
+        // Distribute across restaurants
         for (i in 1..2) {
-            val table = tables[i % tables.size]
+            val restaurantId = restaurantIds[i % restaurantIds.size]
+            val restaurantTables = tablesByRestaurant[restaurantId] ?: emptyList()
+            if (restaurantTables.isEmpty()) continue
+            
+            val table = restaurantTables[i % restaurantTables.size]
             val createdAt = Instant.now().minusSeconds((i * 3600).toLong())
             val preparedBy = if (kitchenChefs.isNotEmpty()) kitchenChefs[i % kitchenChefs.size].id else null
             val waiter = if (waiters.isNotEmpty()) waiters[i % waiters.size].id else null
@@ -124,8 +131,13 @@ class OrderTestDataSeeder(
         }
 
         // 3 IN_PROGRESS orders (today/recent) - being prepared by kitchen chefs
+        // Distribute across restaurants
         for (i in 1..3) {
-            val table = tables[(i + 2) % tables.size]
+            val restaurantId = restaurantIds[i % restaurantIds.size]
+            val restaurantTables = tablesByRestaurant[restaurantId] ?: emptyList()
+            if (restaurantTables.isEmpty()) continue
+            
+            val table = restaurantTables[(i + 2) % restaurantTables.size]
             val createdAt = Instant.now().minusSeconds((i * 2400).toLong())
             val preparedBy = if (kitchenChefs.isNotEmpty()) kitchenChefs[i % kitchenChefs.size].id else null
             val waiter = if (waiters.isNotEmpty()) waiters[(i + 1) % waiters.size].id else null
@@ -144,8 +156,13 @@ class OrderTestDataSeeder(
         }
 
         // 2 PENDING orders (today/recent) - just created by waiters
+        // Distribute across restaurants
         for (i in 1..2) {
-            val table = tables[(i + 5) % tables.size]
+            val restaurantId = restaurantIds[i % restaurantIds.size]
+            val restaurantTables = tablesByRestaurant[restaurantId] ?: emptyList()
+            if (restaurantTables.isEmpty()) continue
+            
+            val table = restaurantTables[(i + 5) % restaurantTables.size]
             val createdAt = Instant.now().minusSeconds((i * 1800).toLong())
             val waiter = if (waiters.isNotEmpty()) waiters[(i + 3) % waiters.size].id else null
             val order = OrderEntity(
@@ -162,10 +179,15 @@ class OrderTestDataSeeder(
 
         // Create explicit older READY orders for testing payment page (demo: 3 orders)
         // These are guaranteed to exist so we can test the "older orders" functionality
+        // Distribute across restaurants
         logger.info("Creating explicit older READY orders for testing payment page...")
         for (i in 1..3) {
             val daysAgo = i // 1, 2, 3 days ago
-            val table = tables[i % tables.size]
+            val restaurantId = restaurantIds[i % restaurantIds.size]
+            val restaurantTables = tablesByRestaurant[restaurantId] ?: emptyList()
+            if (restaurantTables.isEmpty()) continue
+            
+            val table = restaurantTables[i % restaurantTables.size]
             val createdAt = Instant.now().minus(daysAgo.toLong(), ChronoUnit.DAYS)
                 .minusSeconds((i * 3600).toLong()) // Spread throughout the day
             val updatedAt = createdAt.plusSeconds(Random.nextInt(1800, 7200).toLong()) // Made ready 30min-2h after creation
@@ -196,7 +218,12 @@ class OrderTestDataSeeder(
             val ordersForDay = Random.nextInt(3, 9)
             
             for (orderIndex in 1..ordersForDay) {
-                val table = tables[Random.nextInt(tables.size)]
+                // Distribute orders across restaurants (alternate between restaurants)
+                val restaurantId = restaurantIds[orderIndex % restaurantIds.size]
+                val restaurantTables = tablesByRestaurant[restaurantId] ?: emptyList()
+                if (restaurantTables.isEmpty()) continue
+                
+                val table = restaurantTables[Random.nextInt(restaurantTables.size)]
                 val createdAt = Instant.now()
                     .minus(daysAgo.toLong(), ChronoUnit.DAYS)
                     .minusSeconds(Random.nextInt(0, 16 * 3600).toLong()) // Spread throughout the day
