@@ -23,7 +23,10 @@ object RestaurantProductMapper {
             // Restaurant-specific availability - restaurants can enable/disable products independently
             isAvailable = entity.isAvailable,
             restaurantId = restaurant.id!!,
-            restaurantName = restaurant.name
+            restaurantName = restaurant.name,
+            categoryId = product.categoryId,
+            description = product.description,
+            imageUrl = product.imageUrl
         )
     }
 
