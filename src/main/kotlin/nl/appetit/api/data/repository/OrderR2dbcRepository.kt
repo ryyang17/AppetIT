@@ -25,10 +25,16 @@ interface OrderR2dbcRepository : ReactiveCrudRepository<OrderEntity, Int> {
         )
         SELECT DISTINCT o.*
         FROM "order" o
-        JOIN order_item oi ON oi.order_id = o.order_id
-        JOIN product p ON p.product_id = oi.product_id
-        WHERE p.category_id IN (SELECT category_id FROM category_tree)
-            AND o.restaurant_id = :restaurantId;
+        WHERE o.restaurant_id = :restaurantId
+            -- Include orders that have at least one item in the category tree
+            -- (Mixed orders with both Food and Beverages will be included in both filters)
+            AND EXISTS (
+                SELECT 1
+                FROM order_item oi
+                JOIN product p ON p.product_id = oi.product_id
+                WHERE oi.order_id = o.order_id
+                    AND p.category_id IN (SELECT category_id FROM category_tree)
+            );
     """)
     fun findByRestaurantIdAndCategoryName(
         restaurantId: Int,
