@@ -97,60 +97,52 @@ class RestaurantProductServiceTest {
     }
 
     @Test
-    fun `getAvailableProductsByRestaurant should return only available products`() {
+    fun `getProductsByRestaurant should filter available products`() {
         // Arrange
         val restaurantId = 1
-        val availableEntities = listOf(
-            createRestaurantProductEntity(1, restaurantId, 10, isAvailable = true)
+        val allEntities = listOf(
+            createRestaurantProductEntity(1, restaurantId, 10, isAvailable = true),
+            createRestaurantProductEntity(2, restaurantId, 11, isAvailable = false)
         )
+        val availableEntities = allEntities.filter { it.isAvailable }
 
-        whenever(restaurantProductRepository.findByRestaurantIdAndIsAvailable(restaurantId, true))
-            .thenReturn(Flux.fromIterable(availableEntities))
+        whenever(restaurantProductRepository.findByRestaurantId(restaurantId))
+            .thenReturn(Flux.fromIterable(allEntities))
 
         // Act
-        val result = restaurantProductService.getAvailableProductsByRestaurant(restaurantId)
+        val result = restaurantProductService.getProductsByRestaurant(restaurantId)
+            .filter { it.isAvailable }
 
         // Assert
         StepVerifier.create(result)
             .expectNext(availableEntities[0])
             .verifyComplete()
 
-        verify(restaurantProductRepository).findByRestaurantIdAndIsAvailable(restaurantId, true)
+        verify(restaurantProductRepository).findByRestaurantId(restaurantId)
     }
 
     @Test
-    fun `getProductsByRestaurantWithDetails should return rich product information`() {
+    fun `getProductByRestaurant should return product for specific restaurant`() {
         // Arrange
         val restaurantId = 1
         val productId = 10
         val entity = createRestaurantProductEntity(1, restaurantId, productId)
-        val product = createProduct(productId, "Pizza Margherita", BigDecimal("12.50"))
-        val restaurant = createRestaurant(restaurantId, "Pizzeria Mario")
 
-        whenever(restaurantProductRepository.findByRestaurantId(restaurantId))
-            .thenReturn(Flux.just(entity))
-        whenever(productRepository.findById(productId))
-            .thenReturn(Mono.just(product))
-        whenever(restaurantRepository.findById(restaurantId))
-            .thenReturn(Mono.just(restaurant))
+        whenever(restaurantProductRepository.findByRestaurantIdAndProductId(restaurantId, productId))
+            .thenReturn(Mono.just(entity))
 
         // Act
-        val result = restaurantProductService.getProductsByRestaurantWithDetails(restaurantId)
+        val result = restaurantProductService.getProductByRestaurant(restaurantId, productId)
 
         // Assert
         StepVerifier.create(result)
             .expectNextMatches { response ->
                 response.productId == productId &&
-                response.productName == "Pizza Margherita" &&
-                response.basePrice == BigDecimal("12.50") &&
-                response.restaurantId == restaurantId &&
-                response.restaurantName == "Pizzeria Mario"
+                response.restaurantId == restaurantId
             }
             .verifyComplete()
 
-        verify(restaurantProductRepository).findByRestaurantId(restaurantId)
-        verify(productRepository).findById(productId)
-        verify(restaurantRepository).findById(restaurantId)
+        verify(restaurantProductRepository).findByRestaurantIdAndProductId(restaurantId, productId)
     }
 
     @Test
@@ -183,9 +175,13 @@ class RestaurantProductServiceTest {
         val restaurantId = 1
         val productId = 10
         val isAvailable = false
+        val existingEntity = createRestaurantProductEntity(1, restaurantId, productId, isAvailable = true)
+        val updatedEntity = existingEntity.copy(isAvailable = isAvailable)
 
-        whenever(restaurantProductRepository.updateAvailability(restaurantId, productId, isAvailable))
-            .thenReturn(Mono.empty())
+        whenever(restaurantProductRepository.findByRestaurantIdAndProductId(restaurantId, productId))
+            .thenReturn(Mono.just(existingEntity))
+        whenever(restaurantProductRepository.save(updatedEntity))
+            .thenReturn(Mono.just(updatedEntity))
 
         // Act
         val result = restaurantProductService.updateProductAvailability(restaurantId, productId, isAvailable)
@@ -194,7 +190,8 @@ class RestaurantProductServiceTest {
         StepVerifier.create(result)
             .verifyComplete()
 
-        verify(restaurantProductRepository).updateAvailability(restaurantId, productId, isAvailable)
+        verify(restaurantProductRepository).findByRestaurantIdAndProductId(restaurantId, productId)
+        verify(restaurantProductRepository).save(updatedEntity)
     }
 
     @Test
@@ -203,9 +200,13 @@ class RestaurantProductServiceTest {
         val restaurantId = 1
         val productId = 10
         val customPrice = BigDecimal("20.00")
+        val existingEntity = createRestaurantProductEntity(1, restaurantId, productId, customPrice = null)
+        val updatedEntity = existingEntity.copy(customPrice = customPrice)
 
-        whenever(restaurantProductRepository.updateCustomPrice(restaurantId, productId, customPrice))
-            .thenReturn(Mono.empty())
+        whenever(restaurantProductRepository.findByRestaurantIdAndProductId(restaurantId, productId))
+            .thenReturn(Mono.just(existingEntity))
+        whenever(restaurantProductRepository.save(updatedEntity))
+            .thenReturn(Mono.just(updatedEntity))
 
         // Act
         val result = restaurantProductService.updateProductPrice(restaurantId, productId, customPrice)
@@ -214,11 +215,12 @@ class RestaurantProductServiceTest {
         StepVerifier.create(result)
             .verifyComplete()
 
-        verify(restaurantProductRepository).updateCustomPrice(restaurantId, productId, customPrice)
+        verify(restaurantProductRepository).findByRestaurantIdAndProductId(restaurantId, productId)
+        verify(restaurantProductRepository).save(updatedEntity)
     }
 
     @Test
-    fun `isProductAvailableInRestaurant should return true when product is available`() {
+    fun `getProductByRestaurant should return product when available`() {
         // Arrange
         val restaurantId = 1
         val productId = 10
@@ -228,18 +230,18 @@ class RestaurantProductServiceTest {
             .thenReturn(Mono.just(entity))
 
         // Act
-        val result = restaurantProductService.isProductAvailableInRestaurant(restaurantId, productId)
+        val result = restaurantProductService.getProductByRestaurant(restaurantId, productId)
 
         // Assert
         StepVerifier.create(result)
-            .expectNext(true)
+            .expectNextMatches { it.isAvailable == true }
             .verifyComplete()
 
         verify(restaurantProductRepository).findByRestaurantIdAndProductId(restaurantId, productId)
     }
 
     @Test
-    fun `isProductAvailableInRestaurant should return false when product link does not exist`() {
+    fun `getProductByRestaurant should throw error when product link does not exist`() {
         // Arrange
         val restaurantId = 1
         val productId = 10
@@ -248,12 +250,12 @@ class RestaurantProductServiceTest {
             .thenReturn(Mono.empty())
 
         // Act
-        val result = restaurantProductService.isProductAvailableInRestaurant(restaurantId, productId)
+        val result = restaurantProductService.getProductByRestaurant(restaurantId, productId)
 
         // Assert
         StepVerifier.create(result)
-            .expectNext(false)
-            .verifyComplete()
+            .expectError(RuntimeException::class.java)
+            .verify()
     }
 
     @Test

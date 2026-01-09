@@ -55,6 +55,7 @@ class ProductServiceTest {
         val product = createProduct(null, "New Product")
         val savedProduct = createProduct(1, "New Product")
         whenever(productRepository.save(any())).thenReturn(Mono.just(savedProduct))
+        whenever(restaurantProductService.linkNewProductToAllRestaurants(any())).thenReturn(Mono.empty())
 
         // Act
         val result = productService.save(product)
@@ -65,6 +66,7 @@ class ProductServiceTest {
             .verifyComplete()
 
         verify(productRepository, times(1)).save(product)
+        verify(restaurantProductService, times(1)).linkNewProductToAllRestaurants(1)
     }
 
     @Test

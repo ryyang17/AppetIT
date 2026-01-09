@@ -53,13 +53,16 @@ class RestaurantServiceTest {
 
     @Test
     fun `save should persist restaurant`() {
-        whenever(restaurantRepository.save(any())).thenReturn(Mono.just(restaurant))
+        val savedRestaurant = restaurant.copy(id = 1)
+        whenever(restaurantRepository.save(any())).thenReturn(Mono.just(savedRestaurant))
+        whenever(restaurantProductService.linkAllProductsToNewRestaurant(any())).thenReturn(Mono.empty())
 
         StepVerifier.create(restaurantService.save(restaurant))
-            .expectNext(restaurant)
+            .expectNext(savedRestaurant)
             .verifyComplete()
 
         verify(restaurantRepository).save(restaurant)
+        verify(restaurantProductService).linkAllProductsToNewRestaurant(1)
     }
 
     @Test
