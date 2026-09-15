@@ -1,0 +1,34 @@
+@startuml API Component Structure
+!include <C4/C4_Component>
+
+LAYOUT_WITH_LEGEND()
+
+title AppetIT API – C4 Component Diagram (by folder)
+
+Container_Boundary(api, "AppetIT API", "Spring Boot\nKotlin, WebFlux, R2DBC") {
+
+  ' ===== presentation/ =====
+  Component(presentation, "presentation", "Spring WebFlux", "API layer (`presentation`)\n- HTTP controllers\n- DTOs\n- API mappers")
+
+  ' ===== logic/ =====
+  Component(logic, "logic", "Kotlin services & domain", "Domain layer (`logic`)\n- Services\n- Domain models\n- Repository interfaces")
+
+  ' ===== data/ =====
+  Component(data, "data", "Spring Data R2DBC", "Persistence layer (`data`)\n- R2DBC repositories\n- Entities\n- Data mappers")
+
+  ' ===== config/ =====
+  Component(config, "config", "Spring configuration", "Configuration (`config`)\n- CORS\n- Flyway migrations\n- Data seeding")
+}
+
+ContainerDb(db, "PostgreSQL", "PostgreSQL", "Reactive database (R2DBC)\nStores all AppetIT domain data.")
+
+' ===== RELATIONSHIPS (folder-level) =====
+Rel(presentation, logic, "invokes", "Controllers → services")
+Rel(logic, data, "uses", "Repositories")
+Rel(data, db, "reads / writes", "R2DBC")
+Rel(config, presentation, "configures", "CORS, global settings")
+Rel(config, db, "migrates / seeds", "Flyway, DataSeeder")
+
+SHOW_LEGEND()
+
+@enduml

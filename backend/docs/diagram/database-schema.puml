@@ -1,0 +1,70 @@
+@startuml Database Schema - Tag Filtering
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam linetype ortho
+
+entity "product" {
+  * product_id : INT <<PK>>
+  --
+  * name : VARCHAR(255)
+  * price : NUMERIC(10,2)
+  description : TEXT
+  image_url : VARCHAR(128)
+  * is_available : BOOLEAN
+  category_id : INT <<FK>>
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity "tag" {
+  * tag_id : INT <<PK>>
+  --
+  * name : VARCHAR(100) <<UNIQUE>>
+  svg_icon : TEXT
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity "product_tag" {
+  * product_id : INT <<PK, FK>>
+  * tag_id : INT <<PK, FK>>
+  --
+  created_at : TIMESTAMP
+}
+
+entity "category" {
+  * category_id : INT <<PK>>
+  --
+  * name : VARCHAR(255)
+  parent_id : BIGINT <<FK>>
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+' Relationships
+product ||--o{ product_tag : "has many"
+tag ||--o{ product_tag : "has many"
+category ||--o{ product : "has many"
+
+note right of product_tag
+  **Many-to-Many Relationship**
+  Junction table linking products
+  and tags.
+  
+  Used for:
+  - Finding products by tags
+  - Excluding products with tags
+  - Tag filtering queries
+end note
+
+note bottom of product
+  **Tag Exclusion Query Logic**
+  
+  Products are excluded if they have
+  ANY of the specified tags in the
+  product_tag junction table.
+end note
+
+@enduml
+

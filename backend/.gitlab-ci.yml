@@ -1,0 +1,72 @@
+# .gitlab-ci.yml
+image: docker:28.5-cli
+
+stages:
+  - build
+  - test
+  - package
+  - deploy
+
+# Build stage
+build:
+  stage: build
+  image: eclipse-temurin:24
+  script:
+    - ./gradlew clean bootJar --no-daemon
+  artifacts:
+    paths:
+      - build/libs/
+    expire_in: 1 week
+
+# Test stage
+test:
+  stage: test
+  image: eclipse-temurin:24
+  script:
+    - ./gradlew test --no-daemon
+  artifacts:
+    reports:
+      junit:
+        - build/test-results/test/*.xml
+  allow_failure: true
+
+# Package stage
+pacakge_prod:
+  stage: package
+  script:
+    - docker build -t 547988/appetit-api:latest -t 547988/appetit-api:$CI_COMMIT_SHORT_SHA .
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - docker push 547988/appetit-api:latest
+    - docker push 547988/appetit-api:$CI_COMMIT_SHORT_SHA
+  only:
+    - main
+
+package_staging:
+  stage: package
+  script:
+    - docker build -t 547988/appetit-api:staging -t 547988/appetit-api:$CI_COMMIT_SHORT_SHA .
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - docker push 547988/appetit-api:staging
+    - docker push 547988/appetit-api:$CI_COMMIT_SHORT_SHA
+  only:
+    - staging
+
+deploy_staging:
+  stage: deploy
+  tags: [appetit_deploy]
+  script:
+    - cd /srv/appetit-api
+    - docker compose pull staging
+    - docker compose up -d staging
+  only:
+    - staging
+
+deploy_prod:
+  stage: deploy
+  tags: [appetit_deploy]
+  script:
+    - cd /srv/appetit-api
+    - docker compose pull prod
+    - docker compose up -d prod
+  only:
+    - main
