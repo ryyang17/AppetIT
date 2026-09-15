@@ -1,0 +1,89 @@
+image: node:lts-trixie-slim
+
+variables:
+  NEXT_BUILD_DIR: .next
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+    - .next/cache/
+
+stages:
+  - test
+  - build
+  - package
+  - deploy
+
+.before_script_template:
+  before_script:
+    - npm ci
+
+
+test_lint:
+  extends: .before_script_template
+  stage: test
+  allow_failure: true
+  script:
+    - npm run lint
+
+build:
+  extends: .before_script_template
+  stage: build
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - .next/standalone/
+      - .next/static/
+      - public/
+      - package.json
+      - package-lock.json
+      - docker-compose.yml
+    expire_in: 1 hour
+
+# Package stage
+pacakge_prod:
+  stage: package
+  image: docker:28.5-cli
+  script:
+    - docker build -t 547988/appetit-user-app:latest -t 547988/appetit-user-app:$CI_COMMIT_SHORT_SHA .
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - docker push 547988/appetit-user-app:latest
+    - docker push 547988/appetit-user-app:$CI_COMMIT_SHORT_SHA
+  only:
+    - main
+
+pacakge_staging:
+  stage: package
+  image: docker:28.5-cli
+  script:
+    - docker build -t 547988/appetit-user-app:staging -t 547988/appetit-user-app:$CI_COMMIT_SHORT_SHA .
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - docker push 547988/appetit-user-app:staging
+    - docker push 547988/appetit-user-app:$CI_COMMIT_SHORT_SHA
+
+deploy_staging:
+  stage: deploy
+  tags: [appetit_deploy]
+  script:
+    - mkdir -p /srv/appetit/user-app
+    - cp docker-compose.yml /srv/appetit/user-app/
+    - cd /srv/appetit/user-app
+    - docker compose pull staging
+    - docker compose up -d staging
+  only:
+    - staging
+
+deploy_prod:
+  stage: deploy
+  tags: [appetit_deploy]
+  script:
+    - mkdir -p /srv/appetit/user-app
+    - cp docker-compose.yml /srv/appetit/user-app/
+    - cd /srv/appetit/user-app
+    - docker compose pull prod
+    - docker compose up -d prod
+  only:
+    - main
+
